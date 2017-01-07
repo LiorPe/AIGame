@@ -11,10 +11,10 @@ namespace Game
 {
     class Program
     {
-        public const int m_numberOfGames      = 100;
-        public const int m_boardRows          = 5;
-        public const int m_boardCols          = 4;
-        public const int m_gameLevel          = 1;
+        public const int m_numberOfGames = 100; //100;
+        public const int m_boardRows          = 10;
+        public const int m_boardCols          = 10;
+        public const int m_gameLevel          = 5;
         public const bool m_printAllResults   /*= false; */ = true;
         static void Main(string[] args)
         {
@@ -137,8 +137,8 @@ namespace Game
                 return 100;
             else if (m_gameLevel == 4)
                 return 80;
-            else 
-                return 50;
+            else
+                return 50; //Int32.MaxValue;//  ; n 
         }
     }
 }
