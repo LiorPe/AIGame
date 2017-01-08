@@ -11,9 +11,9 @@ namespace Game
 {
     class Program
     {
-        public const int m_numberOfGames = 100; //100;
-        public const int m_boardRows          = 10;
-        public const int m_boardCols          = 10;
+        public const int m_numberOfGames = 100 ; //100;
+        public const int m_boardRows          = 4;
+        public const int m_boardCols          = 6;
         public const int m_gameLevel          = 5;
         public const bool m_printAllResults   /*= false; */ = true;
         static void Main(string[] args)
@@ -115,6 +115,8 @@ namespace Game
             else if (player == '2')
                 move = (new Player2()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds));
             timer.Stop();
+            Console.WriteLine("({0},{1})", move.Item1, move.Item2);
+
             TimeSpan timespan    = timer.Elapsed;
             if (timespan.TotalMilliseconds > stopMilliseconds ||
                 !board.isLegalMove(move.Item1, move.Item2))

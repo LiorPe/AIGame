@@ -13,7 +13,7 @@ namespace Game
         Stopwatch stopWatch = new Stopwatch();
         TimeSpan _timesup;
         int branchingFactor;
-        int _depthLevel=5;
+        int _depthLevel=7;
         int _calculatedNodes=1;
         public void getPlayers(ref string player1_1, ref string player1_2)  //fill players ids
         {
@@ -62,7 +62,10 @@ namespace Game
             foreach (Tuple<int, int> move in boardOutlinesAfterMove.Keys)
             {
                 if (TimeIsAboutToEnd())
+                {
+                    Console.WriteLine(_depthLevel);
                     break;
+                }
                 currentBorderOutline = boardOutlinesAfterMove[move];
                 currentGain = CheckMoveGain(currentBorderOutline, move, Turn.MyTurn, _depthLevel);
                 if (currentGain> maxGain)
@@ -121,7 +124,11 @@ namespace Game
             foreach (Tuple<int, int> move in boardOutlinesAfterMove.Keys)
             {
                 if (TimeIsAboutToEnd())
+                {
+                    Console.WriteLine(depthLevel);
                     break;
+                }
+                    
                 currentBorderOutline = boardOutlinesAfterMove[move];
                 currentGain = CheckMoveGain(currentBorderOutline, move, Turn.MyTurn, depthLevel-1);
                 if (playedPreviousTurn == Turn.MyTurn)
@@ -137,7 +144,7 @@ namespace Game
 
         private bool TimeIsAboutToEnd()
         {
-            return (_timesup - stopWatch.Elapsed).TotalMilliseconds < 10;
+            return (_timesup - stopWatch.Elapsed).TotalMilliseconds < 8;
         }
 
         private void StartStopWatch()
