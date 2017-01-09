@@ -12,7 +12,7 @@ namespace Game
     {
         Stopwatch stopWatch = new Stopwatch();
         TimeSpan _timesup;
-        int _depthLevel = 8;
+        int _MAxDepthLevel = 14;
         public void getPlayers(ref string player1_1, ref string player1_2)  //fill players ids
         {
             player1_1 = "203722814";  //id1
@@ -56,6 +56,7 @@ namespace Game
             int currentGain;
             Tuple<int, int> chosenMove = null;
             int i = 0;
+            int depthLevel = Math.Max(_MAxDepthLevel - (int)(1.4*Math.Log(boardOutlinesAfterMyTurn.Count)),3);
             foreach (Tuple<int, int> move in boardOutlinesAfterMyTurn.Keys)
             {
                 if (TimeIsAboutToEnd())
@@ -64,7 +65,7 @@ namespace Game
                 }
                 BoardOutlinesAterMyMove = boardOutlinesAfterMyTurn[move];
                 if (!IsALosingMove(BoardOutlinesAterMyMove))
-                    currentGain = CheckMoveValue(BoardOutlinesAterMyMove, Turn.MaxPlayer_ME, _depthLevel,int.MinValue,int.MaxValue);
+                    currentGain = CheckMoveValue(BoardOutlinesAterMyMove, Turn.MaxPlayer_ME, depthLevel, int.MinValue,int.MaxValue);
                 else
                     currentGain = -1;
                 if (currentGain > maxGain)
@@ -134,12 +135,7 @@ namespace Game
             {
                 return 0;
             }
-            if (_depthLevel - depthLevel>=2)
-                //Console.WriteLine("Node at depth={0}", depthLevel);
-            if (depthLevel == 0)
-            {
-                return 0;
-            }
+
             int bestValue;
             int currentMoveValue;
             Turn thisTurn;
@@ -169,7 +165,7 @@ namespace Game
                 {
                     bestValue = Math.Max(bestValue, currentMoveValue);
                     alpha = Math.Max(alpha, currentMoveValue);
-                    if (bestValue >= beta)
+                    if (bestValue >= beta || bestValue==1)
                     {
                         //Console.WriteLine("Tree cutted at depth {0} by alpha beya pruning!", depthLevel);
                         break;
@@ -179,7 +175,7 @@ namespace Game
                 {
                     bestValue = Math.Min(bestValue, currentMoveValue);
                     beta = Math.Min(beta, currentMoveValue);
-                    if (bestValue <= alpha)
+                    if (bestValue <= alpha || bestValue == -1)
                     {
                         //Console.WriteLine("Tree cut at depth {0} by alpha beya pruning!", depthLevel);
                         break;
