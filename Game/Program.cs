@@ -6,19 +6,25 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ClassLibrary1;
+using System.IO;
 
 namespace Game
 {
     class Program
     {
-        public const int m_numberOfGames = 100 ; //100;
-        public const int m_boardRows          = 4;
-        public const int m_boardCols          = 6;
+        public const int m_numberOfGames = 50 ; //100;
+        public const int m_boardRows          = 30;
+        public const int m_boardCols          = 20;
         public const int m_gameLevel          = 5;
         public const bool m_printAllResults   /*= false; */ = true;
+        static Logger logger;
         static void Main(string[] args)
         {
-
+            string[] fi = Directory.GetFiles(@"log");
+            foreach(string file in fi)
+            {
+                File.Delete(file);
+            }
             char playerTurn         = '1';
             char firstPlayer        = '1';
             char winner             = ' ';
@@ -29,6 +35,7 @@ namespace Game
             Random random           = new Random();
             for (int game = 0; game < m_numberOfGames; game++)
             {
+                logger = new Logger();
                 if (game > 0)
                 {
                     board           = createEmptyBoard();
@@ -64,7 +71,10 @@ namespace Game
                 if (winner == '1')
                     player1wins++;
                 else if (winner == '2')
+                {
                     player2wins++;
+                    logger.WriteToFile(@"log\AIGameLog" + game + ".txt");
+                }
             }
 
             if(m_printAllResults)
@@ -91,7 +101,7 @@ namespace Game
             int player2wins
         )
         {
-            Console.WriteLine("Player1 wins:  " + player1wins + "\nPlayer2 wins:  " + player2wins);
+            Console.WriteLine("Lior wins:  " + player1wins + "\nNoga wins:  " + player2wins);
             Console.ReadLine();
         }
 
@@ -111,11 +121,17 @@ namespace Game
             Stopwatch timer      = Stopwatch.StartNew();
             Tuple<int, int> move = new Tuple<int, int>(-1, -1);
             if (player == '1')
+            {
                 move = (new Player1()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds));
+                logger.Add(String.Format("Lior`s Move: ({0},{1})", move.Item1, move.Item2));
+            }
             else if (player == '2')
-                move = (new Player2()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds));
+            {
+                move = (new NogaPlayer()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds));
+                logger.Add(String.Format("Noga`s Move: ({0},{1})", move.Item1, move.Item2));
+            }
             timer.Stop();
-            Console.WriteLine("({0},{1})", move.Item1, move.Item2);
+            //Console.WriteLine("({0},{1})", move.Item1, move.Item2);
 
             TimeSpan timespan    = timer.Elapsed;
             if (timespan.TotalMilliseconds > stopMilliseconds ||
@@ -141,6 +157,18 @@ namespace Game
                 return 80;
             else
                 return 50; //Int32.MaxValue;//  ; n 
+        }
+
+        public class Logger{
+            List<string> log = new List<string>();
+            public void Add(string s)
+            {
+                log.Add(s);
+            }
+            public void WriteToFile(string path)
+            {
+                File.WriteAllLines(path, log.ToArray());
+            }
         }
     }
 }
