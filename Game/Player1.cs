@@ -13,7 +13,7 @@ namespace Game
         Stopwatch stopWatch = new Stopwatch();
         TimeSpan _timesup;
         int branchingFactor;
-        int _depthLevel = 3;
+        int _depthLevel = 10;
         public void getPlayers(ref string player1_1, ref string player1_2)  //fill players ids
         {
             player1_1 = "203722814";  //id1
@@ -32,7 +32,7 @@ namespace Game
             Tuple<int, int> toReturn = null;
             Queue<Tuple<int, int>> allPossibleMoves = borderOutline.GetAllPossibleMoves();
             branchingFactor = allPossibleMoves.Count();
-            toReturn = FindBestMove(borderOutline, allPossibleMoves, Turn.MyTurn);
+            toReturn = FindBestMove(borderOutline, allPossibleMoves, Turn.MaxPlayer_ME);
             if (toReturn == null)
                 toReturn = borderOutline.GetNextMove();
             Console.WriteLine("{0} ms left", (_timesup - stopWatch.Elapsed).TotalMilliseconds);
@@ -66,7 +66,7 @@ namespace Game
                 }
                 BoardOutlinesAterMyMove = boardOutlinesAfterMyTurn[move];
                 if (!IsALosingMove(BoardOutlinesAterMyMove))
-                    currentGain = CheckMoveGain(BoardOutlinesAterMyMove, Turn.OpponentTurn, _depthLevel);
+                    currentGain = CheckMoveValue(BoardOutlinesAterMyMove, Turn.MinPlayer_Opponent, _depthLevel,int.MinValue,int.MaxValue);
                 else
                     currentGain = -1;
                 if (currentGain > maxGain)
@@ -96,73 +96,88 @@ namespace Game
             return currentBorderOutlines.LastSquareLefat() || currentBorderOutlines.OneCol() || currentBorderOutlines.OneRow(); 
         }
 
-        private int CheckMoveGain(BoardOutlines boardOutline, Turn playedPreviousTurn, int depthLevel)
+        private int CheckMoveValue(BoardOutlines boardOutline, Turn playedPreviousTurn, int depthLevel, int alpha , int beta)
         {
+            if (_depthLevel - depthLevel>=2)
+                Console.WriteLine("Node at depth={0}", depthLevel);
             Tuple<int, int> currentMove;
-            BoardOutlines currentBorderOutline;
+            BoardOutlines boardOutlineAfterMove;
             Dictionary<Tuple<int, int>, BoardOutlines> boardsOutlinesAfterThisMove = new Dictionary<Tuple<int, int>, BoardOutlines>();
             Queue<Tuple<int, int>> allPossibleMoves = boardOutline.GetAllPossibleMoves();
             while ((_timesup - stopWatch.Elapsed).TotalMilliseconds > 10 && allPossibleMoves.Count > 0)
             {
                 currentMove = allPossibleMoves.Dequeue();
-                currentBorderOutline = new BoardOutlines(boardOutline, currentMove);
-                if (IsAWiningMove(currentBorderOutline))
+                boardOutlineAfterMove = new BoardOutlines(boardOutline, currentMove);
+                if (IsAWiningMove(boardOutlineAfterMove))
                 {
-                    if (playedPreviousTurn == Turn.MyTurn)
+                    if (playedPreviousTurn == Turn.MaxPlayer_ME)
                         return -1;
                     else
                         return 1;
                 }
-                if (IsALosingMove(currentBorderOutline))
+                if (IsALosingMove(boardOutlineAfterMove))
                 {
-                    if (playedPreviousTurn == Turn.MyTurn)
+                    if (playedPreviousTurn == Turn.MaxPlayer_ME)
                         return 1;
                     else
                         return -1;
                 }
-                boardsOutlinesAfterThisMove[currentMove] = currentBorderOutline;
+                boardsOutlinesAfterThisMove[currentMove] = boardOutlineAfterMove;
             }
             if (depthLevel == 0)
             {
                 return 0;
             }
-            int totalGain;
-            int currentGain;
-            Turn nextTurn;
-            if (playedPreviousTurn == Turn.MyTurn)
+            int bestValue;
+            int currentMoveValue;
+            Turn thisTurn;
+            if (playedPreviousTurn == Turn.MaxPlayer_ME)
             {
-                nextTurn = Turn.OpponentTurn;
-                totalGain = int.MinValue;
+                thisTurn = Turn.MinPlayer_Opponent;
+                bestValue = int.MaxValue;
             }
             else
             {
-                totalGain = int.MaxValue;
-                nextTurn = Turn.MyTurn;
+                bestValue = int.MinValue;
+                thisTurn = Turn.MaxPlayer_ME;
             }
             int counter = 0;
             foreach (Tuple<int, int> move in boardsOutlinesAfterThisMove.Keys)
             {
                 if (TimeIsAboutToEnd())
                 {
-                    //Console.WriteLine(depthLevel);
                     break;
                 }
 
-                currentBorderOutline = boardsOutlinesAfterThisMove[move];
-                currentGain = CheckMoveGain(currentBorderOutline, nextTurn, depthLevel - 1);
-                if (playedPreviousTurn == Turn.MyTurn)
+                boardOutlineAfterMove = boardsOutlinesAfterThisMove[move];
+                currentMoveValue = CheckMoveValue(boardOutlineAfterMove, playedPreviousTurn, depthLevel - 1,alpha,beta);
+                if (thisTurn == Turn.MaxPlayer_ME)
                 {   
-                    totalGain = Math.Max(totalGain, currentGain);
+                    bestValue = Math.Max(bestValue, currentMoveValue);
+                    alpha = Math.Max(alpha, currentMoveValue);
+                    if (bestValue >= beta)
+                    {
+                        Console.WriteLine("Tree cutted at depth {0} by alpha beya pruning!", depthLevel);
+                        break;
+                    }
+                    else
+                    {
+                    }
                 }
                 else
                 {
-                    totalGain = Math.Min(totalGain, currentGain);
+                    bestValue = Math.Min(bestValue, currentMoveValue);
+                    beta = Math.Min(beta, currentMoveValue);
+                    if (bestValue <= alpha)
+                    {
+                        Console.WriteLine("Tree cut at depth {0} by alpha beya pruning!", depthLevel);
+                        break;
+                    }
 
                 }
                 counter++;
             }
-            //Console.WriteLine("{0} moves were checked from {1} possible moves", counter, boardOutlinesAfterMove.Count);
-            return totalGain;
+            return bestValue;
 
         }
 
@@ -184,7 +199,7 @@ namespace Game
             Console.WriteLine("RunTime " + elapsedTime);
         }
 
-        public enum Turn { MyTurn, OpponentTurn };
+        public enum Turn { MaxPlayer_ME, MinPlayer_Opponent };
 
 
         private class BoardOutlines

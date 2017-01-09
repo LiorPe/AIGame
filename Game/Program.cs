@@ -13,8 +13,8 @@ namespace Game
     class Program
     {
         public const int m_numberOfGames = 50 ; //100;
-        public const int m_boardRows          = 4;
-        public const int m_boardCols          = 5;
+        public const int m_boardRows          = 20;
+        public const int m_boardCols          = 18;
         public const int m_gameLevel          = 5;
         public const bool m_printAllResults   /*= false; */ = true;
         static Logger logger;
@@ -156,7 +156,7 @@ namespace Game
             else if (m_gameLevel == 4)
                 return 80;
             else
-                return 50; //Int32.MaxValue;//  ; n 
+                return 50;  
         }
 
         public class Logger{
