@@ -13,8 +13,8 @@ namespace Game
     class Program
     {
         public const int m_numberOfGames = 50 ; //100;
-        public const int m_boardRows          = 20;
-        public const int m_boardCols          = 18;
+        public const int m_boardRows          = 5;
+        public const int m_boardCols          = 4;
         public const int m_gameLevel          = 5;
         public const bool m_printAllResults   /*= false; */ = true;
         static Logger logger;
@@ -136,9 +136,16 @@ namespace Game
             TimeSpan timespan    = timer.Elapsed;
             if (timespan.TotalMilliseconds > stopMilliseconds ||
                 !board.isLegalMove(move.Item1, move.Item2))
+            {
+                if (player == '1')
+                    move = (new Player1()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds));
                 return false;
+
+            }
             else
             {
+                if (player == '2' && move.Item1 == 1 && move.Item2 == 2)
+                    Console.WriteLine();
                 board.fillPlayerMove(move.Item1, move.Item2);
                 return true;
             }
@@ -156,7 +163,7 @@ namespace Game
             else if (m_gameLevel == 4)
                 return 80;
             else
-                return 50;  
+                return 50; // int.MaxValue;//
         }
 
         public class Logger{
