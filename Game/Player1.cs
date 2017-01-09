@@ -42,34 +42,31 @@ namespace Game
         private Tuple<int, int> FindBestMove(BoardOutlines borderOutline, Queue<Tuple<int, int>> movesToCheck, Turn myTurn)
         {
             Tuple<int, int> currentMove;
-            BoardOutlines currentBorderOutline;
-            Dictionary<Tuple<int, int>, BoardOutlines> boardOutlinesAfterMove = new Dictionary<Tuple<int, int>, BoardOutlines>();
+            BoardOutlines BoardOutlinesAterMyMove;
+            Dictionary<Tuple<int, int>, BoardOutlines> boardOutlinesAfterMyTurn = new Dictionary<Tuple<int, int>, BoardOutlines>();
             while (!TimeIsAboutToEnd() && movesToCheck.Count > 0)
             {
                 currentMove = movesToCheck.Dequeue();
-                currentBorderOutline = new BoardOutlines(borderOutline, currentMove);
-                if (IsAWiningMove(currentBorderOutline))
+                BoardOutlinesAterMyMove = new BoardOutlines(borderOutline, currentMove);
+                if (IsAWiningMove(BoardOutlinesAterMyMove))
                 {
-                    //bool ans = IsAWiningMove(currentBorderOutline);
-                    //Console.WriteLine("found winning move");
                     return currentMove;
                 }
-                boardOutlinesAfterMove[currentMove] = currentBorderOutline;
+                boardOutlinesAfterMyTurn[currentMove] = BoardOutlinesAterMyMove;
             }
             int maxGain = Int32.MinValue;
             int currentGain;
             Tuple<int, int> chosenMove = null;
             int i = 0;
-            foreach (Tuple<int, int> move in boardOutlinesAfterMove.Keys)
+            foreach (Tuple<int, int> move in boardOutlinesAfterMyTurn.Keys)
             {
                 if (TimeIsAboutToEnd())
                 {
-                    //Console.WriteLine(_depthLevel);
                     break;
                 }
-                currentBorderOutline = boardOutlinesAfterMove[move];
-                if (!IsALosingMove(currentBorderOutline))
-                    currentGain = CheckMoveGain(currentBorderOutline, move, Turn.MyTurn, _depthLevel);
+                BoardOutlinesAterMyMove = boardOutlinesAfterMyTurn[move];
+                if (!IsALosingMove(BoardOutlinesAterMyMove))
+                    currentGain = CheckMoveGain(BoardOutlinesAterMyMove, Turn.OpponentTurn, _depthLevel);
                 else
                     currentGain = -1;
                 if (currentGain > maxGain)
@@ -99,31 +96,31 @@ namespace Game
             return currentBorderOutlines.LastSquareLefat() || currentBorderOutlines.OneCol() || currentBorderOutlines.OneRow(); 
         }
 
-        private int CheckMoveGain(BoardOutlines borderOutlineBeforeMove, Tuple<int, int> previousMove, Turn playedPreviousTurn, int depthLevel)
+        private int CheckMoveGain(BoardOutlines boardOutline, Turn playedPreviousTurn, int depthLevel)
         {
             Tuple<int, int> currentMove;
             BoardOutlines currentBorderOutline;
-            Dictionary<Tuple<int, int>, BoardOutlines> boardOutlinesAfterOponentMove = new Dictionary<Tuple<int, int>, BoardOutlines>();
-            Queue<Tuple<int, int>> allPossibleMoves = borderOutlineBeforeMove.GetAllPossibleMoves();
+            Dictionary<Tuple<int, int>, BoardOutlines> boardsOutlinesAfterThisMove = new Dictionary<Tuple<int, int>, BoardOutlines>();
+            Queue<Tuple<int, int>> allPossibleMoves = boardOutline.GetAllPossibleMoves();
             while ((_timesup - stopWatch.Elapsed).TotalMilliseconds > 10 && allPossibleMoves.Count > 0)
             {
                 currentMove = allPossibleMoves.Dequeue();
-                currentBorderOutline = new BoardOutlines(borderOutlineBeforeMove, currentMove);
+                currentBorderOutline = new BoardOutlines(boardOutline, currentMove);
                 if (IsAWiningMove(currentBorderOutline))
                 {
                     if (playedPreviousTurn == Turn.MyTurn)
-                        return 1;
-                    else
                         return -1;
+                    else
+                        return 1;
                 }
                 if (IsALosingMove(currentBorderOutline))
                 {
                     if (playedPreviousTurn == Turn.MyTurn)
-                        return -1;
-                    else
                         return 1;
+                    else
+                        return -1;
                 }
-                boardOutlinesAfterOponentMove[currentMove] = currentBorderOutline;
+                boardsOutlinesAfterThisMove[currentMove] = currentBorderOutline;
             }
             if (depthLevel == 0)
             {
@@ -143,7 +140,7 @@ namespace Game
                 nextTurn = Turn.MyTurn;
             }
             int counter = 0;
-            foreach (Tuple<int, int> move in boardOutlinesAfterOponentMove.Keys)
+            foreach (Tuple<int, int> move in boardsOutlinesAfterThisMove.Keys)
             {
                 if (TimeIsAboutToEnd())
                 {
@@ -151,8 +148,8 @@ namespace Game
                     break;
                 }
 
-                currentBorderOutline = boardOutlinesAfterOponentMove[move];
-                currentGain = CheckMoveGain(currentBorderOutline, move, nextTurn, depthLevel - 1);
+                currentBorderOutline = boardsOutlinesAfterThisMove[move];
+                currentGain = CheckMoveGain(currentBorderOutline, nextTurn, depthLevel - 1);
                 if (playedPreviousTurn == Turn.MyTurn)
                 {   
                     totalGain = Math.Max(totalGain, currentGain);

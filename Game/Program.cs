@@ -13,8 +13,8 @@ namespace Game
     class Program
     {
         public const int m_numberOfGames = 50 ; //100;
-        public const int m_boardRows          = 30;
-        public const int m_boardCols          = 20;
+        public const int m_boardRows          = 4;
+        public const int m_boardCols          = 5;
         public const int m_gameLevel          = 5;
         public const bool m_printAllResults   /*= false; */ = true;
         static Logger logger;
