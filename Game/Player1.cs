@@ -16,7 +16,7 @@ namespace Game
         public void getPlayers(ref string player1_1, ref string player1_2)  //fill players ids
         {
             player1_1 = "203722814";  //id1
-            player1_2 = "123456789";  //id2
+            player1_2 = "308111160";  //id2
 
         }
         public Tuple<int, int> playYourTurn
@@ -56,7 +56,7 @@ namespace Game
             int currentGain;
             Tuple<int, int> chosenMove = null;
             int i = 0;
-            int depthLevel = Math.Max(_MAxDepthLevel - (int)(1.4*Math.Log(boardOutlinesAfterMyTurn.Count)),3);
+            int depthLevel = 8;
             foreach (Tuple<int, int> move in boardOutlinesAfterMyTurn.Keys)
             {
                 if (TimeIsAboutToEnd())
@@ -201,7 +201,7 @@ namespace Game
 
         private bool TimeIsAboutToEnd()
         {
-            return (_timesup - stopWatch.Elapsed).TotalMilliseconds < 8;
+            return (_timesup - stopWatch.Elapsed).TotalMilliseconds < 10;
         }
 
         private void StartStopWatch()
