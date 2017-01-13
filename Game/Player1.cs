@@ -48,6 +48,7 @@ namespace Game
                 BoardOutlinesAterMyMove = new BoardOutlines(borderOutline, currentMove);
                 if (IsAWiningMove(BoardOutlinesAterMyMove))
                 {
+                    Console.WriteLine("Gain: 1");
                     return currentMove;
                 }
                 boardOutlinesAfterMyTurn[currentMove] = BoardOutlinesAterMyMove;
@@ -56,7 +57,7 @@ namespace Game
             int currentGain;
             Tuple<int, int> chosenMove = null;
             int i = 0;
-            int depthLevel = 8;
+            int depthLevel = 5 - (int)Math.Max(Math.Log10(Math.Pow(boardOutlinesAfterMyTurn.Keys.Count, 2)), 1);
             foreach (Tuple<int, int> move in boardOutlinesAfterMyTurn.Keys)
             {
                 if (TimeIsAboutToEnd())
@@ -82,6 +83,7 @@ namespace Game
                 }
                 i++;
             }
+            Console.WriteLine("Gain: {0}", maxGain);
             return chosenMove;
         }
 
