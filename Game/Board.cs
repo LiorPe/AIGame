@@ -118,5 +118,17 @@ namespace Game
             }
             Console.WriteLine("");
         }
+
+        public override string ToString()
+        {
+            string result = String.Empty;
+            for (int i=0; i < _rows;i++)
+            {
+                for (int j = 0; j < _cols; j++)
+                    result += _board[i, j];
+                result += "|";
+            }
+            return result;
+        }
     }
 }

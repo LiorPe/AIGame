@@ -139,7 +139,7 @@ namespace Game
                 !board.isLegalMove(move.Item1, move.Item2))
             {
                 if (player == '1')
-                    move = (new Player1()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds));
+                    move = (new PlayerNotWorking()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds));
                 return false;
 
             }
@@ -164,7 +164,7 @@ namespace Game
             else if (m_gameLevel == 4)
                 return 80;
             else
-                return 50; //1000000 * 60 * 2;//
+                return 1000000 * 60 * 2;//50; //
         }
 
         public class Logger{
