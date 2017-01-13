@@ -12,9 +12,9 @@ namespace Game
 {
     class Program
     {
-        public const int m_numberOfGames = 50 ; //100;
-        public const int m_boardRows          = 5;
-        public const int m_boardCols          = 4;
+        public const int m_numberOfGames = 1 ; //100;
+        public const int m_boardRows          = 4;
+        public const int m_boardCols          = 5;
         public const int m_gameLevel          = 5;
         public const bool m_printAllResults   /*= false; */ = true;
         static Logger logger;
@@ -60,6 +60,7 @@ namespace Game
                     catch(Exception e)
                     {
                         legalTurn = false;
+                        legalTurn = Turn(board, playerTurn, true);             //Your Turn             
                     }
                     switchTurns(ref playerTurn);
                     if (board.isTheGameEnded() || !legalTurn)
@@ -163,7 +164,7 @@ namespace Game
             else if (m_gameLevel == 4)
                 return 80;
             else
-                return 50; // int.MaxValue;//
+                return 50; //1000000 * 60 * 2;//
         }
 
         public class Logger{
