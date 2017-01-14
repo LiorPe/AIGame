@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Game
 {
-    public class Board
+    internal class Board
     {
         public int      _rows;
         public int      _cols;

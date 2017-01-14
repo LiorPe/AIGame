@@ -5,16 +5,15 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ClassLibrary1;
-using System.IO;
+using System.IO; 
 
 namespace Game
 {
     class Program
     {
-        public const int m_numberOfGames = 5;
-        public const int m_boardRows = 5;
-        public const int m_boardCols = 4;
+        public const int m_numberOfGames = 100;
+        public const int m_boardRows = 12;
+        public const int m_boardCols = 10;
         public const int m_gameLevel = 5;
         public const bool m_printAllResults   /*= false; */ = true;
         static Logger logger;
@@ -62,9 +61,7 @@ namespace Game
                     catch (Exception e)
                     {
                         legalTurn = false;
-                        legalTurn = Turn(board, playerTurn, true);             //Your Turn             
                     }
-                    Console.WriteLine("Player " + playerTurn);
                     board.printTheBoard();
                     switchTurns(ref playerTurn);
                     if (board.isTheGameEnded() || !legalTurn)
@@ -86,7 +83,7 @@ namespace Game
                         logger.WriteToFile(@"log\AIGameLog" + game + ".txt");
                 }
                 Console.WriteLine("Press enter to continue");
-                Console.ReadLine();
+                //Console.ReadLine();
 
             }
 
@@ -114,7 +111,7 @@ namespace Game
             int player2wins
         )
         {
-            Console.WriteLine("Player1 wins:  " + player1wins + "\nOldVersion wins:  " + player2wins);
+            Console.WriteLine("Lior wins:  " + player1wins + "\nLera wins:  " + player2wins);
             Console.ReadLine();
         }
 
@@ -136,18 +133,16 @@ namespace Game
             if (player == '1')
             {
                 move = (new Player1()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds));
-                if (move.Item1==4 && move.Item2==1)
-                    move = (new Player1()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds*50000));
-                // Console.WriteLine("Lior`s Move: ({0},{1})", move.Item1, move.Item2);
+                Console.WriteLine("Lior`s Move: ({0},{1})", move.Item1, move.Item2);
                 logger.Add(String.Format("Lior`s Move: ({0},{1})", move.Item1, move.Item2));
 
             }
             else if (player == '2')
             {
 
-                move = (new NogaPlayer().playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds)));
-                //Console.WriteLine("Old Version`s Move: ({0},{1})", move.Item1, move.Item2);
-                logger.Add(String.Format("Old Version`s Move: ({0},{1})", move.Item1, move.Item2));
+                move = (new LeraPlayer3().playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds)));
+                Console.WriteLine("Lera`s Move: ({0},{1})", move.Item1, move.Item2);
+                logger.Add(String.Format("Lera`s Move: ({0},{1})", move.Item1, move.Item2));
 
             }
             timer.Stop();
@@ -155,6 +150,7 @@ namespace Game
             if (timespan.TotalMilliseconds > stopMilliseconds ||
                 !board.isLegalMove(move.Item1, move.Item2))
             {
+                
                 return false;
             }
             else
