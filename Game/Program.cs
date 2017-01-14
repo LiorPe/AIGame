@@ -15,13 +15,12 @@ namespace Game
         public const int m_numberOfGames = 100;
         public const int m_boardRows = 5;
         public const int m_boardCols = 4;
-        public const int m_gameLevel = 5;
+        public const int m_gameLevel = 1;
         public const bool m_printAllResults   /*= false; */ = true;
         static Logger logger;
 
         static void Main(string[] args)
         {
-            logger = new Logger();
 
             string[] fi = Directory.GetFiles(@"log");
             foreach (string file in fi)
@@ -38,6 +37,7 @@ namespace Game
             Random random = new Random();
             for (int game = 0; game < m_numberOfGames; game++)
             {
+                logger = new Logger();
                 if (game > 0)
                 {
                     board = createEmptyBoard();
@@ -56,7 +56,7 @@ namespace Game
                         }
                         else if (playerTurn == '2')
                         {
-                            legalTurn = Turn(board, playerTurn, false);
+                            legalTurn = Turn(board, playerTurn, true);
                         }
                     }
                     catch (Exception e)
@@ -71,11 +71,17 @@ namespace Game
                 } while (winner == ' ');
 
                 if (winner == '1')
+                {
                     player1wins++;
+                    if (firstPlayer == '1')
+                        logger.WriteToFile(@"log\AIGameLog" + game + ".txt");
+
+                }
                 else if (winner == '2')
                 {
                     player2wins++;
-                    logger.WriteToFile(@"log\AIGameLog" + game + ".txt");
+                    if (firstPlayer == '1')
+                        logger.WriteToFile(@"log\AIGameLog" + game + ".txt");
                 }
             }
 
@@ -125,12 +131,14 @@ namespace Game
             if (player == '1')
             {
                 move = (new Player1()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds));
+                if (move.Item1==0 && move.Item2==1)
+                    move = (new Player1()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds));
                 logger.Add(String.Format("Lior`s Move: ({0},{1})", move.Item1, move.Item2));
 
             }
             else if (player == '2')
             {
-                move = (new Player2()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds));
+                move = (new NogaPlayer()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds));
                 logger.Add(String.Format("Noga`s Move: ({0},{1})", move.Item1, move.Item2));
 
             }
@@ -158,7 +166,7 @@ namespace Game
             else if (m_gameLevel == 4)
                 return 80;
             else
-                return 50;
+                return 50;// 000000;
         }
         public class Logger
         {
