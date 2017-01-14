@@ -49,6 +49,7 @@ namespace Game
                 {
                     //Console.WriteLine("Gain: 1");
                     PreviousMoveLedToWinningSituation(BoardOutlinesAterMyMove);
+                    Console.WriteLine("Gain calculated: 1");
                     return currentMove;
                 }
                 boardOutlinesAfterMyTurn[currentMove] = BoardOutlinesAterMyMove;
@@ -56,7 +57,7 @@ namespace Game
             int maxGain = Int32.MinValue;
             int currentGain;
             Tuple<int, int> chosenMove = null;
-            int depthLevel = 0;
+            int depthLevel = 5;
             int previousDepthLvl = depthLevel;
             Tuple<int, int> move;
             for (int i = 0; i < boardOutlinesAfterMyTurn.Keys.Count; i++)
@@ -99,6 +100,7 @@ namespace Game
                 }
 
             }
+            Console.WriteLine("Gain calculated: " + maxGain);
             if (maxGain == -1)
             {
                 return borderOutline.GetNextMove();
@@ -377,8 +379,6 @@ namespace Game
                     return true;
                 return false;
             }
-
-
 
             internal bool OneRow()
             {
