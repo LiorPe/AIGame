@@ -55,7 +55,7 @@ namespace Game
             int maxGain = Int32.MinValue;
             int currentGain;
             Tuple<int, int> chosenMove = null;
-            int depthLevel = 4;
+            int depthLevel = 2;
             int previousDepthLvl = depthLevel;
             Tuple<int, int> move;
             for (int i = 0; i < boardOutlinesAfterMyTurn.Keys.Count; i++)
@@ -156,7 +156,7 @@ namespace Game
         {
             bool OnlyPoisonedSquareLeft = currentBorderOutlines.OnlyPoisonedSquareLeft();
             bool OneCol = currentBorderOutlines.OneCol();
-            bool BoardIs2XN =currentBorderOutlines.BoardIs2XN();
+            bool BoardIs2XN = currentBorderOutlines.BoardIs2XN();
             bool BoardIsNX2 = currentBorderOutlines.BoardIsNX2();
             bool OneRow = currentBorderOutlines.OneRow();
             bool NextMoveLeadsToTwoSameLengthStripes = currentBorderOutlines.NextMoveLeadsToTwoSameLengthStripes();
@@ -228,7 +228,7 @@ namespace Game
                     if (bestValue >= beta || bestValue == 1)
                     {
                         //Console.WriteLine("Tree cutted at depth {0} by alpha beya pruning!", depthLevel);
-                         break;
+                        break;
                     }
                 }
                 else
@@ -295,22 +295,35 @@ namespace Game
                 RightmostAvailabeSquareAtRow = new Dictionary<int, int?>();
                 for (int row = 0; row < board._rows; row++)
                 {
-                    int? rightMostAvailabeSquareAtRow = null;
-                    bool found = false;
-                    int col = 0;
-                    while (col < board._cols && !found)
-                    {
-                        if (board._board[row, col] == 'X')
-                            rightMostAvailabeSquareAtRow = col;
-                        else
-                            found = true;
-                        col++;
-                    }
-                    RightmostAvailabeSquareAtRow[row] = rightMostAvailabeSquareAtRow;
-                    if (rightMostAvailabeSquareAtRow != null)
+                    RightmostAvailabeSquareAtRow[row] = FindMostRightSquare(board._board, row, _cols);
+                    if (RightmostAvailabeSquareAtRow[row] != null)
                         _mostBottomRow = row;
                 }
 
+            }
+
+
+            private int? FindMostRightSquare(char[,] _board, int row, int rowLength)
+            {
+                if (_board[row, 0] != 'X')
+                    return null;
+                if (rowLength == 1 || _board[row, rowLength - 1] == 'X')
+                    return rowLength - 1;
+                int l = 0;
+                int r = rowLength - 1;
+                int m;
+                while (l <= r)
+                {
+                    m = (l + r) / 2;
+                    if (_board[row, m] == 'X' && _board[row, m + 1] != 'X')
+                        return m;
+                    if (_board[row, m] == 'X')
+                        l = m + 1;
+                    else
+                        r = m - 1;
+
+                }
+                return FindMostRightSquare(_board, row, rowLength);
             }
 
             public BoardOutlines(BoardOutlines boardOutlines, Tuple<int, int> move)
@@ -338,6 +351,8 @@ namespace Game
                         _mostBottomRow = row;
                 }
             }
+
+
 
             public Tuple<int, int> GetNextMove()
             {
@@ -383,7 +398,7 @@ namespace Game
 
             internal bool OneRow()
             {
-                return _mostBottomRow == 0 && RightmostAvailabeSquareAtRow[_mostBottomRow]>0;
+                return _mostBottomRow == 0 && RightmostAvailabeSquareAtRow[_mostBottomRow] > 0;
             }
 
             internal bool OneCol()
@@ -393,7 +408,7 @@ namespace Game
 
             internal bool BoardIsNX2()
             {
-                return RightmostAvailabeSquareAtRow[_mostBottomRow] == 1 && RightmostAvailabeSquareAtRow[0] == 1 && _mostBottomRow>0;
+                return RightmostAvailabeSquareAtRow[_mostBottomRow] == 1 && RightmostAvailabeSquareAtRow[0] == 1 && _mostBottomRow > 0;
             }
 
             internal bool BoardIs2XN()
@@ -409,7 +424,7 @@ namespace Game
             }
             internal bool nextMoveLeadToTwoSameLengthRow()
             {
-                if (RightmostAvailabeSquareAtRow[1] != null && RightmostAvailabeSquareAtRow[0] == RightmostAvailabeSquareAtRow[1] + 1 
+                if (RightmostAvailabeSquareAtRow[1] != null && RightmostAvailabeSquareAtRow[0] == RightmostAvailabeSquareAtRow[1] + 1
                     && _mostBottomRow == 2)
                     return true;
                 else
@@ -446,8 +461,8 @@ namespace Game
             }
             public override string ToString()
             {
-                string result="|";
-                for (int row = 0; row<_rows && RightmostAvailabeSquareAtRow[row]!=null; row++)
+                string result = "|";
+                for (int row = 0; row < _rows && RightmostAvailabeSquareAtRow[row] != null; row++)
                 {
                     result += RightmostAvailabeSquareAtRow[row] + "|";
                 }
