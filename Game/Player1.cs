@@ -48,6 +48,7 @@ namespace Game
                 if (PreviousMoveLedToWinningSituation(BoardOutlinesAterMyMove))
                 {
                     //Console.WriteLine("Gain: 1");
+                    PreviousMoveLedToWinningSituation(BoardOutlinesAterMyMove);
                     return currentMove;
                 }
                 boardOutlinesAfterMyTurn[currentMove] = BoardOutlinesAterMyMove;
@@ -55,7 +56,7 @@ namespace Game
             int maxGain = Int32.MinValue;
             int currentGain;
             Tuple<int, int> chosenMove = null;
-            int depthLevel = 2;
+            int depthLevel = 0;
             int previousDepthLvl = depthLevel;
             Tuple<int, int> move;
             for (int i = 0; i < boardOutlinesAfterMyTurn.Keys.Count; i++)
@@ -96,19 +97,12 @@ namespace Game
                     }
 
                 }
-                if (maxGain == -1)
-                {
-                    move = borderOutline.GetNextMove();
-                    //Console.WriteLine("all moves lead to loose!");
-                }
-                if (maxGain == 1)
-                {
-                    move = borderOutline.GetNextMove();
-                }
 
             }
-            //Console.WriteLine("Gain: {0}", maxGain);
-            //Console.WriteLine(maxGain);
+            if (maxGain == -1)
+            {
+                return borderOutline.GetNextMove();
+            }
             return chosenMove;
         }
         private int UpdateDepthLevel(int depthLevel, ref int previousDepthLvl, int movesLeftToEvaluate, int totalMovesToEvaluate, bool allowDecrease)
@@ -124,14 +118,14 @@ namespace Game
                 {
                     int newDepthLevel = 0;
                     previousDepthLvl = depthLevel;
-                    Console.WriteLine("Decreased depth level to :{0} , moves left: ({1} from {2}), time left: ({3} from {4})", newDepthLevel, movesLeftToEvaluate, totalMovesToEvaluate, _timesup.TotalMilliseconds - stopWatch.Elapsed.TotalMilliseconds, _timesup.TotalMilliseconds);
+                    //Console.WriteLine("Decreased depth level to :{0} , moves left: ({1} from {2}), time left: ({3} from {4})", newDepthLevel, movesLeftToEvaluate, totalMovesToEvaluate, _timesup.TotalMilliseconds - stopWatch.Elapsed.TotalMilliseconds, _timesup.TotalMilliseconds);
                     return newDepthLevel;
                 }
                 else
                 {
                     int newDepthLevel = Math.Max(depthLevel - 1, 0);
                     previousDepthLvl = depthLevel;
-                    Console.WriteLine("Decreased depth level to :{0} , moves left: ({1} from {2}), time left: ({3} from {4})", newDepthLevel, movesLeftToEvaluate, totalMovesToEvaluate, _timesup.TotalMilliseconds - stopWatch.Elapsed.TotalMilliseconds, _timesup.TotalMilliseconds);
+                    //Console.WriteLine("Decreased depth level to :{0} , moves left: ({1} from {2}), time left: ({3} from {4})", newDepthLevel, movesLeftToEvaluate, totalMovesToEvaluate, _timesup.TotalMilliseconds - stopWatch.Elapsed.TotalMilliseconds, _timesup.TotalMilliseconds);
                     return newDepthLevel;
                 }
 
@@ -140,10 +134,10 @@ namespace Game
             {
                 int newDepthLevel = depthLevel + 1;//+ 1;
                 previousDepthLvl = depthLevel;
-                Console.WriteLine("Increaded depth level to :{0}  , moves left: ({1} from {2}), time left: ({3} from {4})", newDepthLevel, movesLeftToEvaluate, totalMovesToEvaluate, _timesup.TotalMilliseconds - stopWatch.Elapsed.TotalMilliseconds, _timesup.TotalMilliseconds);
+                //Console.WriteLine("Increaded depth level to :{0}  , moves left: ({1} from {2}), time left: ({3} from {4})", newDepthLevel, movesLeftToEvaluate, totalMovesToEvaluate, _timesup.TotalMilliseconds - stopWatch.Elapsed.TotalMilliseconds, _timesup.TotalMilliseconds);
                 return newDepthLevel;
             }
-            Console.WriteLine("Depth level remained :{0}  , moves left: ({1} from {2}), time left: ({3} from {4})", depthLevel, movesLeftToEvaluate, totalMovesToEvaluate, _timesup.TotalMilliseconds - stopWatch.Elapsed.TotalMilliseconds, _timesup.TotalMilliseconds);
+            //Console.WriteLine("Depth level remained :{0}  , moves left: ({1} from {2}), time left: ({3} from {4})", depthLevel, movesLeftToEvaluate, totalMovesToEvaluate, _timesup.TotalMilliseconds - stopWatch.Elapsed.TotalMilliseconds, _timesup.TotalMilliseconds);
             previousDepthLvl = depthLevel;
             return depthLevel;
         }
@@ -245,18 +239,6 @@ namespace Game
             }
             return bestValue;
 
-
-
-            foreach (Tuple<int, int> move in boardsOutlinesAfterThisMove.Keys)
-            {
-                if (TimeIsAboutToEnd())
-                {
-                    break;
-                }
-
-                boardOutlineAfterMove = boardsOutlinesAfterThisMove[move];
-            }
-
         }
 
         private bool TimeIsAboutToEnd()
@@ -285,20 +267,25 @@ namespace Game
             public int _rows;
             public int _cols;
             public int _mostBottomRow = 0;
-            public Dictionary<int, int?> RightmostAvailabeSquareAtRow;
+            public Dictionary<int, int> RightmostAvailabeSquareAtRow;
             private Tuple<int, int> currentMove = null;
 
             public BoardOutlines(Board board)
             {
                 _rows = board._rows;
                 _cols = board._cols;
-                RightmostAvailabeSquareAtRow = new Dictionary<int, int?>();
-                for (int row = 0; row < board._rows; row++)
+                int? rightMostSquareInCurrentRow;
+                RightmostAvailabeSquareAtRow = new Dictionary<int, int>();
+                int row = 0;
+                for (; row < board._rows; row++)
                 {
-                    RightmostAvailabeSquareAtRow[row] = FindMostRightSquare(board._board, row, _cols);
-                    if (RightmostAvailabeSquareAtRow[row] != null)
-                        _mostBottomRow = row;
+                    rightMostSquareInCurrentRow = FindMostRightSquare(board._board, row, _cols);
+                    if (rightMostSquareInCurrentRow != null)
+                        RightmostAvailabeSquareAtRow[row] = (int)rightMostSquareInCurrentRow;
+                    else
+                        break;
                 }
+                _mostBottomRow = Math.Max(0, row - 1);
 
             }
 
@@ -331,23 +318,20 @@ namespace Game
             {
                 _rows = boardOutlines._rows;
                 _cols = boardOutlines._cols;
-                RightmostAvailabeSquareAtRow = new Dictionary<int, int?>();
+                RightmostAvailabeSquareAtRow = new Dictionary<int, int>();
                 int row = 0;
                 for (; row < _rows && row < move.Item1; row++)
                     RightmostAvailabeSquareAtRow[row] = boardOutlines.RightmostAvailabeSquareAtRow[row];
                 for (; row < _rows; row++)
                 {
-                    if (move.Item2 == 0 || boardOutlines.RightmostAvailabeSquareAtRow[row]==null)
+                    if (move.Item2 == 0 || !boardOutlines.RightmostAvailabeSquareAtRow.ContainsKey(row))
                     {
-                        RightmostAvailabeSquareAtRow[row] = null;
+                        break;
                     }
                     else
-                        RightmostAvailabeSquareAtRow[row] = Math.Min(move.Item2 - 1, (int)boardOutlines.RightmostAvailabeSquareAtRow[row]);
+                        RightmostAvailabeSquareAtRow[row] = Math.Min(move.Item2 - 1, boardOutlines.RightmostAvailabeSquareAtRow[row]);
                 }
-                if (move.Item2 != 0)
-                    _mostBottomRow = boardOutlines._mostBottomRow;
-                else
-                    _mostBottomRow = Math.Max(move.Item1 - 1, 0);
+                _mostBottomRow = Math.Max(0, row - 1);
 
             }
 
@@ -357,13 +341,13 @@ namespace Game
             public Tuple<int, int> GetNextMove()
             {
                 if (currentMove == null)
-                    currentMove = new Tuple<int, int>(_mostBottomRow, (int)RightmostAvailabeSquareAtRow[_mostBottomRow]);
+                    currentMove = new Tuple<int, int>(_mostBottomRow, RightmostAvailabeSquareAtRow[_mostBottomRow]);
                 else
                 {
                     if (currentMove.Item2 > 0)
                         currentMove = new Tuple<int, int>(currentMove.Item1, currentMove.Item2 - 1);
                     else
-                        currentMove = new Tuple<int, int>(currentMove.Item1 - 1, (int)RightmostAvailabeSquareAtRow[currentMove.Item1 - 1]);
+                        currentMove = new Tuple<int, int>(currentMove.Item1 - 1, RightmostAvailabeSquareAtRow[currentMove.Item1 - 1]);
                 }
                 return currentMove;
             }
@@ -375,13 +359,13 @@ namespace Game
 
             internal bool TwoSameLengthStripes()
             {
-                return RightmostAvailabeSquareAtRow[0] == _mostBottomRow && RightmostAvailabeSquareAtRow[1] == 0;
+                return RightmostAvailabeSquareAtRow[0] == _mostBottomRow && RightmostAvailabeSquareAtRow.ContainsKey(1) && RightmostAvailabeSquareAtRow[1] == 0;
             }
 
             internal bool TwoSameLengthRows()
             {
 
-                if (RightmostAvailabeSquareAtRow[1] != null && RightmostAvailabeSquareAtRow[0] == RightmostAvailabeSquareAtRow[1] + 1 && _mostBottomRow == 1)
+                if (RightmostAvailabeSquareAtRow.ContainsKey(1) && RightmostAvailabeSquareAtRow[0] == RightmostAvailabeSquareAtRow[1] + 1 && _mostBottomRow == 1)
                     return true;
                 else
                     return false;
@@ -417,14 +401,14 @@ namespace Game
             }
             internal bool NextMoveLeadsToTwoSameLengthStripes()
             {
-                if (_mostBottomRow == RightmostAvailabeSquareAtRow[0] && RightmostAvailabeSquareAtRow[1] != null && RightmostAvailabeSquareAtRow[1] > 0)
+                if (_mostBottomRow == RightmostAvailabeSquareAtRow[0] && RightmostAvailabeSquareAtRow.ContainsKey(1) && RightmostAvailabeSquareAtRow[1] > 0)
                     return true;
                 return false;
 
             }
             internal bool nextMoveLeadToTwoSameLengthRow()
             {
-                if (RightmostAvailabeSquareAtRow[1] != null && RightmostAvailabeSquareAtRow[0] == RightmostAvailabeSquareAtRow[1] + 1
+                if (RightmostAvailabeSquareAtRow.ContainsKey(1) && RightmostAvailabeSquareAtRow[0] == RightmostAvailabeSquareAtRow[1] + 1
                     && _mostBottomRow == 2)
                     return true;
                 else
@@ -433,7 +417,7 @@ namespace Game
 
             internal bool nextMoveLeadToTwoSameLengthCol()
             {
-                if (RightmostAvailabeSquareAtRow[0] == 2 && _mostBottomRow > 0 && RightmostAvailabeSquareAtRow[_mostBottomRow - 1] == 1 && RightmostAvailabeSquareAtRow[_mostBottomRow] == 0)
+                if (_mostBottomRow - 1 >=1 && RightmostAvailabeSquareAtRow[0] == 2 && _mostBottomRow > 0 && RightmostAvailabeSquareAtRow[_mostBottomRow - 1] == 1 && RightmostAvailabeSquareAtRow[_mostBottomRow] == 0)
                     return true;
                 return false;
             }
@@ -441,7 +425,7 @@ namespace Game
             internal Stack<Tuple<int, int>> GetAllPossibleMoves()
             {
                 Stack<Tuple<int, int>> allPossibleMoves = new Stack<Tuple<int, int>>();
-                if (RightmostAvailabeSquareAtRow[0] == 0 && RightmostAvailabeSquareAtRow[1] == null)
+                if (RightmostAvailabeSquareAtRow[0] == 0 && _mostBottomRow==0)
                     return allPossibleMoves;
                 Tuple<int, int> possibleMove = new Tuple<int, int>(_mostBottomRow, (int)RightmostAvailabeSquareAtRow[_mostBottomRow]);
                 allPossibleMoves.Push(possibleMove);
@@ -462,7 +446,7 @@ namespace Game
             public override string ToString()
             {
                 string result = "|";
-                for (int row = 0; row < _rows && RightmostAvailabeSquareAtRow[row] != null; row++)
+                for (int row = 0; row <= _mostBottomRow; row++)
                 {
                     result += RightmostAvailabeSquareAtRow[row] + "|";
                 }

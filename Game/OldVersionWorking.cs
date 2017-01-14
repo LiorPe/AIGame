@@ -185,18 +185,6 @@ namespace Game
             }
             return bestValue;
 
-
-
-            foreach (Tuple<int, int> move in boardsOutlinesAfterThisMove.Keys)
-            {
-                if (TimeIsAboutToEnd())
-                {
-                    break;
-                }
-
-                boardOutlineAfterMove = boardsOutlinesAfterThisMove[move];
-            }
-
         }
 
         private bool TimeIsAboutToEnd()

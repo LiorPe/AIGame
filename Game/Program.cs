@@ -13,9 +13,9 @@ namespace Game
     class Program
     {
         public const int m_numberOfGames = 100;
-        public const int m_boardRows = 5;
-        public const int m_boardCols = 4;
-        public const int m_gameLevel = 1;
+        public const int m_boardRows = 12;
+        public const int m_boardCols = 10;
+        public const int m_gameLevel = 5;
         public const bool m_printAllResults   /*= false; */ = true;
         static Logger logger;
 
@@ -62,6 +62,7 @@ namespace Game
                     catch (Exception e)
                     {
                         legalTurn = false;
+                        legalTurn = Turn(board, playerTurn, true);             //Your Turn             
                     }
                     switchTurns(ref playerTurn);
                     if (board.isTheGameEnded() || !legalTurn)
@@ -131,8 +132,6 @@ namespace Game
             if (player == '1')
             {
                 move = (new Player1()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds));
-                if (move.Item1==0 && move.Item2==1)
-                    move = (new Player1()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds));
                 logger.Add(String.Format("Lior`s Move: ({0},{1})", move.Item1, move.Item2));
 
             }
@@ -146,9 +145,15 @@ namespace Game
             TimeSpan timespan = timer.Elapsed;
             if (timespan.TotalMilliseconds > stopMilliseconds ||
                 !board.isLegalMove(move.Item1, move.Item2))
+            {
+                if (player == '1')
+                    move = (new Player1()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds));
                 return false;
+            }
             else
             {
+                if (player == '1' && move.Item1==0 && move.Item2==1)
+                    move = (new Player1()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, 500000));
                 board.fillPlayerMove(move.Item1, move.Item2);
                 return true;
             }
