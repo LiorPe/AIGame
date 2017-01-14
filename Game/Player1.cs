@@ -326,31 +326,31 @@ namespace Game
                 return FindMostRightSquare(_board, row, rowLength);
             }
 
+
             public BoardOutlines(BoardOutlines boardOutlines, Tuple<int, int> move)
             {
                 _rows = boardOutlines._rows;
                 _cols = boardOutlines._cols;
                 RightmostAvailabeSquareAtRow = new Dictionary<int, int?>();
-
-                foreach (int row in boardOutlines.RightmostAvailabeSquareAtRow.Keys)
+                int row = 0;
+                for (; row < _rows && row < move.Item1; row++)
+                    RightmostAvailabeSquareAtRow[row] = boardOutlines.RightmostAvailabeSquareAtRow[row];
+                for (; row < _rows; row++)
                 {
-                    int? rightMostAvailabeSquareAtRow = boardOutlines.RightmostAvailabeSquareAtRow[row];
-                    if (row >= move.Item1 && rightMostAvailabeSquareAtRow != null && rightMostAvailabeSquareAtRow >= move.Item2)
+                    if (move.Item2 == 0 || boardOutlines.RightmostAvailabeSquareAtRow[row]==null)
                     {
-                        if (move.Item2 == 0)
-                        {
-                            RightmostAvailabeSquareAtRow[row] = null;
-                        }
-                        else
-                            RightmostAvailabeSquareAtRow[row] = move.Item2 - 1;
-
+                        RightmostAvailabeSquareAtRow[row] = null;
                     }
                     else
-                        RightmostAvailabeSquareAtRow[row] = rightMostAvailabeSquareAtRow;
-                    if (RightmostAvailabeSquareAtRow[row] != null)
-                        _mostBottomRow = row;
+                        RightmostAvailabeSquareAtRow[row] = Math.Min(move.Item2 - 1, (int)boardOutlines.RightmostAvailabeSquareAtRow[row]);
                 }
+                if (move.Item2 != 0)
+                    _mostBottomRow = boardOutlines._mostBottomRow;
+                else
+                    _mostBottomRow = Math.Max(move.Item1 - 1, 0);
+
             }
+
 
 
 
