@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using ClassLibrary1;
 
 namespace Game
 {
@@ -70,12 +71,12 @@ namespace Game
 
                 if (stopWatch.Elapsed.TotalMilliseconds / _timesup.TotalMilliseconds < 0.3)
                 {
-                    depthLevel = UpdateDepthLevel(depthLevel, ref previousDepthLvl, boardOutlinesAfterMyTurn.Keys.Count - i, boardOutlinesAfterMyTurn.Keys.Count, false,4);
+                    depthLevel = UpdateDepthLevel(depthLevel, ref previousDepthLvl, boardOutlinesAfterMyTurn.Keys.Count - i, boardOutlinesAfterMyTurn.Keys.Count, false, 4);
 
                 }
                 else
                 {
-                    depthLevel = UpdateDepthLevel(depthLevel, ref previousDepthLvl, boardOutlinesAfterMyTurn.Keys.Count - i, boardOutlinesAfterMyTurn.Keys.Count, true,4);
+                    depthLevel = UpdateDepthLevel(depthLevel, ref previousDepthLvl, boardOutlinesAfterMyTurn.Keys.Count - i, boardOutlinesAfterMyTurn.Keys.Count, true, 4);
                 }
 
                 if (!PreviousMoveLeadToLoosingSituation(BoardOutlinesAterMyMove))
@@ -97,18 +98,18 @@ namespace Game
 
             }
             Console.WriteLine("Gain calculated: " + maxGain);
-            if (maxGain<=0)
+            if (maxGain <= 0)
             {
                 return borderOutline.GetMoveForLosingState();
             }
             return chosenMove;
         }
-        private int UpdateDepthLevel(int depthLevel, ref int previousDepthLvl, int movesLeftToEvaluate, int totalMovesToEvaluate, bool allowDecrease , int maxDepthLevel)
+        private int UpdateDepthLevel(int depthLevel, ref int previousDepthLvl, int movesLeftToEvaluate, int totalMovesToEvaluate, bool allowDecrease, int maxDepthLevel)
         {
             double timeLeft = (_timesup - stopWatch.Elapsed).TotalMilliseconds;
             double portionOfTimeLeft = timeLeft / _timesup.TotalMilliseconds;
             double portionOfMovesLeft = (double)movesLeftToEvaluate / (double)totalMovesToEvaluate;
-            double previousPortionOfMovesLeft = (double)(movesLeftToEvaluate-1) / (double)totalMovesToEvaluate;
+            double previousPortionOfMovesLeft = (double)(movesLeftToEvaluate - 1) / (double)totalMovesToEvaluate;
 
             if (portionOfMovesLeft > portionOfTimeLeft && allowDecrease)
             {
@@ -130,7 +131,7 @@ namespace Game
             }
             if (previousPortionOfMovesLeft < portionOfTimeLeft)
             {
-                int newDepthLevel = Math.Min(depthLevel + 1,maxDepthLevel);//+ 1;
+                int newDepthLevel = Math.Min(depthLevel + 1, maxDepthLevel);//+ 1;
                 previousDepthLvl = depthLevel;
                 //Console.WriteLine("Increaded depth level to :{0}  , moves left: ({1} from {2}), time left: ({3} from {4})", newDepthLevel, movesLeftToEvaluate, totalMovesToEvaluate, _timesup.TotalMilliseconds - stopWatch.Elapsed.TotalMilliseconds, _timesup.TotalMilliseconds);
                 return newDepthLevel;
@@ -236,7 +237,7 @@ namespace Game
 
         private bool TimeIsAboutToEnd()
         {
-            if((_timesup - stopWatch.Elapsed).TotalMilliseconds < 10)
+            if ((_timesup - stopWatch.Elapsed).TotalMilliseconds < 10)
                 return true;
             else
                 return false;
@@ -334,7 +335,8 @@ namespace Game
 
 
 
-            public Tuple<int, int> GetMoveForLosingState() {
+            public Tuple<int, int> GetMoveForLosingState()
+            {
 
                 return new Tuple<int, int>(_mostBottomRow / 2, RightmostAvailabeSquareAtRow[_mostBottomRow / 2]);
             }
@@ -383,7 +385,7 @@ namespace Game
             internal Stack<Tuple<int, int>> GetAllPossibleMoves()
             {
                 Stack<Tuple<int, int>> allPossibleMoves = new Stack<Tuple<int, int>>();
-                if (RightmostAvailabeSquareAtRow[0] == 0 && _mostBottomRow==0)
+                if (RightmostAvailabeSquareAtRow[0] == 0 && _mostBottomRow == 0)
                     return allPossibleMoves;
                 Tuple<int, int> possibleMove = new Tuple<int, int>(_mostBottomRow, (int)RightmostAvailabeSquareAtRow[_mostBottomRow]);
                 allPossibleMoves.Push(possibleMove);

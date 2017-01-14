@@ -5,7 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.IO; 
+using ClassLibrary1;
+using System.IO;
 
 namespace Game
 {
@@ -79,8 +80,8 @@ namespace Game
                 else if (winner == '2')
                 {
                     player2wins++;
-    
-                        logger.WriteToFile(@"log\AIGameLog" + game + ".txt");
+
+                    logger.WriteToFile(@"log\AIGameLog" + game + ".txt");
                 }
                 Console.WriteLine("Press enter to continue");
                 //Console.ReadLine();
@@ -150,7 +151,7 @@ namespace Game
             if (timespan.TotalMilliseconds > stopMilliseconds ||
                 !board.isLegalMove(move.Item1, move.Item2))
             {
-                
+
                 return false;
             }
             else
