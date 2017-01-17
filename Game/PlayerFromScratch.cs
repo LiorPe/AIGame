@@ -12,14 +12,12 @@ namespace Game
         Stopwatch stopWatch = new Stopwatch();
         TimeSpan _timesup;
         List<string> log = new List<string>();
-        //Dictionary<string, BoardSituation> memory = new Dictionary<string, BoardSituation>();
-        Dictionary<string, bool> LeadingToWinSituations = new Dictionary<string, bool>();
-        Dictionary<string, bool> LeadingToLossSituations = new Dictionary<string, bool>();
-        Dictionary<string, bool> CertainLossSituations = new Dictionary<string, bool>();
         Dictionary<string, int> maxPlayerBoardsValues = new Dictionary<string, int>();
         Dictionary<string, int> minPlayerBoardsValues = new Dictionary<string, int>();
 
 
+        public enum BoardState { LeadingToWin, LeadingToLoss, CertainLoss, GoodState, Unknow };
+        Dictionary<string, BoardState> boardsStates = new Dictionary<string, BoardState>();
 
         public void getPlayers(ref string player1_1, ref string player1_2)  //fill players ids
         {
@@ -42,14 +40,14 @@ namespace Game
             chosenMove = FindBestMove(boardOutline, out value);
             if (chosenMove == null)
                 chosenMove = new Tuple<int, int>(0, 0);
-            Console.WriteLine("{0} ms left, value calculated: {1}, dictionary size {2}", (_timesup - stopWatch.Elapsed).TotalMilliseconds, value, LeadingToWinSituations.Count);
+            Console.WriteLine("{0} ms left, value calculated: {1}", (_timesup - stopWatch.Elapsed).TotalMilliseconds, value);
 
             return chosenMove;
         }
 
         private Tuple<int, int> FindBestMove(BoardOutlines boardOutline, out int value)
         {
-            Queue<Tuple<int, int>> allPssobleMoves = boardOutline.GetAllPossibleMoves();
+            List<Tuple<int, int>> allPssobleMoves = boardOutline.GetAllPossibleMoves();
             int bestValue = int.MinValue;
             Tuple<int, int> bestMove = null;
             int currentValue;
@@ -57,13 +55,13 @@ namespace Game
             int totalMovesToCheck = boardOutline.NumOfPossibleMoves;
             int movesChecked = 0;
             // to win on 7X5 - depthlevel = 6
-            int maxDepthLevel = 6;
+            int maxDepthLevel = 7;
             int alpha = int.MinValue;
             BoardOutlines boardAfterMyMove;
-            while (!TimeIsAboutToEnd() && allPssobleMoves.Count > 0)
+            for (int i = 0; !TimeIsAboutToEnd() && i < allPssobleMoves.Count; i++)
             {
                 maxDepthLevel = UpdateMAxDepthLevel(totalMovesToCheck, movesChecked, maxDepthLevel);
-                currentMove = allPssobleMoves.Dequeue();
+                currentMove = allPssobleMoves.ElementAt(i);
                 boardAfterMyMove = new BoardOutlines(boardOutline, currentMove);
                 currentValue = CalculateMoveValue(boardAfterMyMove, 0, maxDepthLevel, Turn.MinPlayer_Opponent, alpha, Int32.MaxValue);
                 alpha = Math.Max(alpha, currentValue);
@@ -83,30 +81,17 @@ namespace Game
 
         private int CalculateMoveValue(BoardOutlines boardOutline, int depthLevel, int maxDepthLevel, Turn turn, int alpha, int beta)
         {
-            if (CretainLoss(boardOutline))
-            {
-                if (turn == Turn.MaxPlayer_ME)
-                    return Int32.MinValue;
-                else
-                    return Int32.MaxValue;
-            }
-            else if (LeadingToWin(boardOutline))
-            {
-                if (turn == Turn.MaxPlayer_ME)
-                   return 1;
-                else
-                    return -1;
-            }
-            else if (LeadingToLoss(boardOutline))
-            {
-                if (turn == Turn.MaxPlayer_ME)
-                    return -1;
-                else
-                    return 1;
-            }
+            if (turn == Turn.MaxPlayer_ME && maxPlayerBoardsValues.ContainsKey(boardOutline.Key))
+                return maxPlayerBoardsValues[boardOutline.Key];
+            else if (turn == Turn.MinPlayer_Opponent && minPlayerBoardsValues.ContainsKey(boardOutline.Key))
+                return minPlayerBoardsValues[boardOutline.Key];
+
+            int value;
+            if (TryGetFinalValue(out value, turn, boardOutline))
+                return value;
             else if (depthLevel == maxDepthLevel)
                 return 0;
-            Queue<Tuple<int, int>> movesToCheck = boardOutline.GetAllPossibleMoves();
+            List<Tuple<int, int>> movesToCheck = boardOutline.GetAllPossibleMoves();
             int bestValue;
             Tuple<int, int> bestMove = null;
             int currentValue;
@@ -123,37 +108,18 @@ namespace Game
                 bestValue = int.MaxValue;
                 nextPlayerTurn = Turn.MaxPlayer_ME;
             }
-            while (movesToCheck.Count > 0)
+            for (int i = 0; i < movesToCheck.Count; i++)
             {
                 if (TimeIsAboutToEnd())
                 {
-                    if (turn == Turn.MaxPlayer_ME)
-                        return 0;
-                    else
-                        return 0;
-
-
+                    return 0;
                 }
-                currentMove = movesToCheck.Dequeue();
+                currentMove = movesToCheck.ElementAt(i);
                 boardAfterMove = new BoardOutlines(boardOutline, currentMove);
-                if (turn == Turn.MaxPlayer_ME && maxPlayerBoardsValues.ContainsKey(boardAfterMove.Key))
-                    currentValue = maxPlayerBoardsValues[boardAfterMove.Key];
-                else if (turn == Turn.MinPlayer_Opponent && minPlayerBoardsValues.ContainsKey(boardAfterMove.Key))
-                    currentValue = minPlayerBoardsValues[boardAfterMove.Key];
-                else
-                {
-                    currentValue = CalculateMoveValue(boardAfterMove, depthLevel + 1, maxDepthLevel, nextPlayerTurn, alpha, beta);
-                    if (turn == Turn.MaxPlayer_ME && currentValue >= 1)
-                    {
-                        maxPlayerBoardsValues[boardAfterMove.Key] = currentValue;
-                        minPlayerBoardsValues[boardAfterMove.Key] = currentValue * -1;
-                    }
-                    else if (turn == Turn.MinPlayer_Opponent && currentValue <= -1)
-                    {
-                        maxPlayerBoardsValues[boardAfterMove.Key] = currentValue*-1;
-                        minPlayerBoardsValues[boardAfterMove.Key] = currentValue;
-                    }
-                }
+
+                currentValue = CalculateMoveValue(boardAfterMove, depthLevel + 1, maxDepthLevel, nextPlayerTurn, alpha, beta);
+
+
                 if (turn == Turn.MaxPlayer_ME)
                 {
                     if (currentValue > bestValue)
@@ -180,36 +146,95 @@ namespace Game
                 }
             }
 
-
+            if (turn == Turn.MaxPlayer_ME && bestValue >= 1)
+            {
+                maxPlayerBoardsValues[boardOutline.Key] = bestValue;
+                minPlayerBoardsValues[boardOutline.Key] = bestValue * -1;
+            }
+            else if (turn == Turn.MinPlayer_Opponent && bestValue <= -1)
+            {
+                maxPlayerBoardsValues[boardOutline.Key] = bestValue * -1;
+                minPlayerBoardsValues[boardOutline.Key] = bestValue;
+            }
             return bestValue;
         }
 
-        private bool LeadingToLoss(BoardOutlines boardOutline)
+        private bool TryGetFinalValue(out int value, Turn turn, BoardOutlines boardOutline)
         {
-            //if (LeadingToLossSituations.ContainsKey(boardOutline.Key))
-            //    return LeadingToLossSituations[boardOutline.Key];
-            bool result = boardOutline.LeadingToLoss();
-            //LeadingToLossSituations[boardOutline.Key] = result;
-            return result;
-        }
+            value = 0;
+            string boardKey = boardOutline.Key;
+            BoardState boardState;
+            if (boardsStates.ContainsKey(boardKey))
+            {
+                boardState = boardsStates[boardKey];
+                if (boardState == BoardState.Unknow)
+                {
+                    return false;
+                }
+                else
+                {
+                    if (boardState == BoardState.CertainLoss)
+                    {
+                        if (turn == Turn.MaxPlayer_ME)
+                            value = -10;
+                        else
+                            value = 10;
+                    }
+                    else if (boardState == BoardState.LeadingToLoss)
+                    {
+                        if (turn == Turn.MaxPlayer_ME)
+                            value = -1;
+                        else
+                            value = 1;
+                    }
+                    else if (boardState == BoardState.LeadingToWin)
+                    {
+                        if (turn == Turn.MaxPlayer_ME)
+                            value = 1;
+                        else
+                            value = -1;
+                    }
+                    return true;
+                }
+            }
+            else
+            {
+                if (boardOutline.OnlyPoisonedSquareLeft())
+                {
+                    if (turn == Turn.MaxPlayer_ME)
+                        value = -10;
+                    else
+                        value = 10;
+                    boardsStates[boardKey] = BoardState.CertainLoss;
+                    return true;
+                }
 
+                else if (boardOutline.LeadingToLoss())
+                {
+                    if (turn == Turn.MaxPlayer_ME)
+                        value = -1;
+                    else
+                        value = 1;
+                    boardsStates[boardKey] = BoardState.LeadingToLoss;
+                    return true;
+                }
+                else if (boardOutline.Square() || boardOutline.OneRow() || boardOutline.OneCol())
+                {
+                    if (turn == Turn.MaxPlayer_ME)
+                        value = 1;
+                    else
+                        value = -1;
+                    boardsStates[boardKey] = BoardState.LeadingToWin;
+                    return true;
+                }
+                else
+                {
+                    boardsStates[boardKey] = BoardState.Unknow;
+                    return false;
+                }
 
-        private bool LeadingToWin(BoardOutlines boardOutline)
-        {
-            //if (LeadingToWinSituations.ContainsKey(boardOutline.Key))
-            //    return LeadingToWinSituations[boardOutline.Key];
-            bool result = boardOutline.Square() || boardOutline.OneRow() || boardOutline.OneCol();
-            //LeadingToWinSituations[boardOutline.Key] = result;
-            return result;
-        }
+            }
 
-        private bool CretainLoss(BoardOutlines boardOutline)
-        {
-            //if (CertainLossSituations.ContainsKey(boardOutline.Key))
-            //    return CertainLossSituations[boardOutline.Key];
-            bool result = boardOutline.OnlyPoisonedSquareLeft();
-            //CertainLossSituations[boardOutline.Key] = result;
-            return result;
         }
 
         private bool TimeIsAboutToEnd()
@@ -344,11 +369,11 @@ namespace Game
                 return false;
             }
 
-            internal Queue<Tuple<int, int>> GetAllPossibleMoves()
+            internal List<Tuple<int, int>> GetAllPossibleMoves()
             {
                 if (_allPossibleMoves == null)
                     FindAllPossiblMoves();
-                return new Queue<Tuple<int, int>>(_allPossibleMoves);
+                return _allPossibleMoves;
 
             }
 

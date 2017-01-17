@@ -63,7 +63,7 @@ namespace Game
             int maxGain = Int32.MinValue;
             int currentGain;
             Tuple<int, int> chosenMove = null;
-            int depthLevel = 20;
+            int depthLevel = 15;
             int previousDepthLvl = depthLevel;
             Tuple<int, int> move;
             for (int i = 0; i < boardOutlinesAfterMyTurn.Keys.Count; i++)
@@ -414,7 +414,7 @@ namespace Game
 
             internal bool Square()
             {
-                if (_mostBottomRow == RightmostAvailabeSquareAtRow[0] && RightmostAvailabeSquareAtRow[_mostBottomRow] == RightmostAvailabeSquareAtRow[0])
+                if (_mostBottomRow == RightmostAvailabeSquareAtRow[0] && RightmostAvailabeSquareAtRow.ContainsKey(1) && RightmostAvailabeSquareAtRow[1]>0)
                     return true;
                 return false;
             }
