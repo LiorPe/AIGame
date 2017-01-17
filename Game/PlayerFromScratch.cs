@@ -56,7 +56,8 @@ namespace Game
             Tuple<int, int> currentMove = null;
             int totalMovesToCheck = boardOutline.NumOfPossibleMoves;
             int movesChecked = 0;
-            int maxDepthLevel = 7;
+            // to win on 7X5 - depthlevel = 6
+            int maxDepthLevel = 6;
             int alpha = int.MinValue;
             BoardOutlines boardAfterMyMove;
             while (!TimeIsAboutToEnd() && allPssobleMoves.Count>0)
@@ -77,8 +78,6 @@ namespace Game
                     break;
             }
             value = bestValue;
-            //if (bestValue == -1)
-            //    FindBestMove(boardOutline, out value);
             return bestMove;
         }
 
@@ -86,6 +85,8 @@ namespace Game
 
         private int CalculateMoveValue(BoardOutlines boardOutline, int depthLevel, int maxDepthLevel, Turn turn, int alpha, int beta)
         {
+
+
 
             if (CretainLoss(boardOutline))
             {
@@ -158,25 +159,18 @@ namespace Game
                 }
                 currentMove = movesToCheck.Pop();
                 boardAfterMove = new BoardOutlines(boardOutline, currentMove);
-                //if (nextPlayerTurn == Turn.MaxPlayer_ME && maxPlayerBoardsValues.ContainsKey(boardAfterMove.Key))
-                //    currentValue = maxPlayerBoardsValues[boardAfterMove.Key];
-                //else if (turn == Turn.MinPlayer_Opponent && minPlayerBoardsValues.ContainsKey(boardAfterMove.Key))
-                //    currentValue= minPlayerBoardsValues[boardAfterMove.Key];
-                //else
-                //{
+                if (turn == Turn.MaxPlayer_ME && maxPlayerBoardsValues.ContainsKey(boardAfterMove.Key))
+                    currentValue = maxPlayerBoardsValues[boardAfterMove.Key];
+                else if (turn == Turn.MinPlayer_Opponent && minPlayerBoardsValues.ContainsKey(boardAfterMove.Key))
+                    currentValue =  minPlayerBoardsValues[boardAfterMove.Key];
+                else
+                {
                     currentValue = CalculateMoveValue(boardAfterMove, depthLevel + 1, maxDepthLevel, nextPlayerTurn, alpha, beta);
-                    //if (nextPlayerTurn == Turn.MaxPlayer_ME && !maxPlayerBoardsValues.ContainsKey(boardAfterMove.Key))
-                    //{
-                    //    maxPlayerBoardsValues[boardOutline.Key] = currentValue;
-                    //    //minPlayerBoardsValues[boardOutline.Key] = result.Item2  * -1;
-                    //}
-                    //if (nextPlayerTurn == Turn.MinPlayer_Opponent && !minPlayerBoardsValues.ContainsKey(boardAfterMove.Key))
-                    //{
-                    //    //maxPlayerBoardsValues[boardOutline.Key] = result.Item2*-1;
-                    //    minPlayerBoardsValues[boardOutline.Key] = currentValue;
-                //    //}
-                //}
-
+                    if (turn == Turn.MaxPlayer_ME && currentValue>=1)
+                        maxPlayerBoardsValues[boardAfterMove.Key] = currentValue;
+                    else if (turn == Turn.MinPlayer_Opponent && currentValue <= -1)
+                        minPlayerBoardsValues[boardAfterMove.Key] = currentValue;
+                }
                 if (turn == Turn.MaxPlayer_ME)
                 {
                     if (currentValue > bestValue)
@@ -202,12 +196,8 @@ namespace Game
 
                 }
             }
-            //if (turn == Turn.MaxPlayer_ME && bestValue<0)
-            //{
-            //    Console.WriteLine("loosing situation for me on depth {0}", depthLevel);
-            //    boardOutline._board.printTheBoard();
-            //    CalculateMoveValue(boardOutline, depthLevel, maxDepthLevel, turn, alpha, beta);
-            //}
+
+
             return bestValue;
         }
 

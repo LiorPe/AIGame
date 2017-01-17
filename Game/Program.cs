@@ -12,7 +12,7 @@ namespace Game
 {
     class Program
     {
-        public const int m_numberOfGames = 1;
+        public const int m_numberOfGames =50;
         public const int m_boardRows =5;
         public const int m_boardCols = 7;
         public const int m_gameLevel = 5;
@@ -58,7 +58,7 @@ namespace Game
                         }
                         else if (playerTurn == '2')
                         {
-                            legalTurn = Turn(board, playerTurn, false);
+                            legalTurn = Turn(board, playerTurn, true);
                         }
                     }
                     catch (Exception e)
@@ -189,7 +189,7 @@ namespace Game
             else if (m_gameLevel == 4)
                 return 80;
             else
-                return 500;
+                return 1000;
         }
         public class Logger
         {
