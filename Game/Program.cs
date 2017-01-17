@@ -13,8 +13,8 @@ namespace Game
     class Program
     {
         public const int m_numberOfGames =50;
-        public const int m_boardRows =5;
-        public const int m_boardCols = 7;
+        public const int m_boardRows =7;
+        public const int m_boardCols = 5;
         public const int m_gameLevel = 5;
         public const bool m_printAllResults   /*= false; */ = true;
         static Logger logger;
@@ -58,7 +58,7 @@ namespace Game
                         }
                         else if (playerTurn == '2')
                         {
-                            legalTurn = Turn(board, playerTurn, true);
+                            legalTurn = Turn(board, playerTurn, false);
                         }
                     }
                     catch (Exception e)
@@ -189,7 +189,7 @@ namespace Game
             else if (m_gameLevel == 4)
                 return 80;
             else
-                return 1000;
+                return 5000;
         }
         public class Logger
         {

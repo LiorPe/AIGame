@@ -248,11 +248,57 @@ namespace Game
             public int NumOfPossibleMoves;
             public string Key;
             Stack<Tuple<int, int>> _allPossibleMoves = new Stack<Tuple<int, int>>();
-            
+            public int _rows;
+            public int _cols;
+            public int _mostBottomRow = 0;
+            public Dictionary<int, int> RightmostAvailabeSquareAtRow;
+
             public BoardOutlines(Board board)
             {
                 _board = new Board(board);
                 Init();
+                NewInit(board);
+            }
+
+            private void NewInit(Board board)
+            {
+                _rows = board._rows;
+                _cols = board._cols;
+                int? rightMostSquareInCurrentRow;
+                RightmostAvailabeSquareAtRow = new Dictionary<int, int>();
+                int row = 0;
+                for (; row < board._rows; row++)
+                {
+                    rightMostSquareInCurrentRow = FindMostRightSquare(board._board, row, _cols);
+                    if (rightMostSquareInCurrentRow != null)
+                        RightmostAvailabeSquareAtRow[row] = (int)rightMostSquareInCurrentRow;
+                    else
+                        break;
+                }
+                _mostBottomRow = Math.Max(0, row - 1);
+            }
+
+            private int? FindMostRightSquare(char[,] _board, int row, int rowLength)
+            {
+                if (_board[row, 0] != 'X')
+                    return null;
+                if (rowLength == 1 || _board[row, rowLength - 1] == 'X')
+                    return rowLength - 1;
+                int l = 0;
+                int r = rowLength - 1;
+                int m;
+                while (l <= r)
+                {
+                    m = (l + r) / 2;
+                    if (_board[row, m] == 'X' && _board[row, m + 1] != 'X')
+                        return m;
+                    if (_board[row, m] == 'X')
+                        l = m + 1;
+                    else
+                        r = m - 1;
+
+                }
+                return FindMostRightSquare(_board, row, rowLength);
             }
 
             private void Init()
@@ -279,7 +325,28 @@ namespace Game
                 _board = new Board(boardOutlines._board);
                 _board.fillPlayerMove(move.Item1, move.Item2);
                 Init();
+                NewFlipSquaure(boardOutlines, move);
 
+            }
+
+            private void NewFlipSquaure(BoardOutlines boardOutlines, Tuple<int, int> move)
+            {
+                _rows = boardOutlines._rows;
+                _cols = boardOutlines._cols;
+                RightmostAvailabeSquareAtRow = new Dictionary<int, int>();
+                int row = 0;
+                for (; row < _rows && row < move.Item1; row++)
+                    RightmostAvailabeSquareAtRow[row] = boardOutlines.RightmostAvailabeSquareAtRow[row];
+                for (; row < _rows; row++)
+                {
+                    if (move.Item2 == 0 || !boardOutlines.RightmostAvailabeSquareAtRow.ContainsKey(row))
+                    {
+                        break;
+                    }
+                    else
+                        RightmostAvailabeSquareAtRow[row] = Math.Min(move.Item2 - 1, boardOutlines.RightmostAvailabeSquareAtRow[row]);
+                }
+                _mostBottomRow = Math.Max(0, row - 1);
             }
 
             public Tuple<int, int> GetMoveForLosingState()
@@ -291,7 +358,7 @@ namespace Game
                 {
                     Random r = new Random();
                     int currentRow = r.Next(0, _board._rows - 1);
-                    int currentCol = r.Next(0, _board._rows - 1);
+                    int currentCol = r.Next(0, _board._cols - 1);
                     if (_board._board[currentRow, currentCol] == 'X' && (currentRow > 0 || currentCol > 0))
                     {
                         if (currentCol + currentRow > row + col)
@@ -308,6 +375,21 @@ namespace Game
 
             internal bool OnlyPoisonedSquareLeft()
             {
+                bool goodResult = OldOnlyPoisonedSquareLeft();
+                bool newResult = NewOnlyPoisonedSquareLeft();
+                if (goodResult != newResult)
+                    throw new Exception();
+                return newResult;
+
+            }
+
+            private bool NewOnlyPoisonedSquareLeft()
+            {
+                return _mostBottomRow == 0 && RightmostAvailabeSquareAtRow[_mostBottomRow] == 0;
+            }
+
+            private bool OldOnlyPoisonedSquareLeft()
+            {
                 for (int row = 0; row < _board._rows; row++)
                 {
                     for (int col = 0; col < _board._cols; col++)
@@ -320,6 +402,23 @@ namespace Game
             }
 
             internal bool Square()
+            {
+                bool goodResult = OldSquare();
+                bool newResult = NewSquare();
+                if (goodResult != newResult)
+                    throw new Exception();
+                return newResult;
+
+            }
+
+            private bool NewSquare()
+            {
+                if (_mostBottomRow == RightmostAvailabeSquareAtRow[0] && RightmostAvailabeSquareAtRow[_mostBottomRow] == RightmostAvailabeSquareAtRow[0])
+                    return true;
+                return false;
+            }
+
+            private bool OldSquare()
             {
                 int row = 0;
                 int squareLength = -1;
@@ -344,6 +443,7 @@ namespace Game
                     return false;
                 return true;
             }
+
             internal Stack<Tuple<int, int>> GetAllPossibleMoves()
             {
                 return new Stack<Tuple<int, int>>( _allPossibleMoves);
@@ -352,6 +452,22 @@ namespace Game
 
             internal bool OneRow()
             {
+                bool goodResult = OldOneRow();
+                bool newResult = NewOneRow();
+                if (goodResult != newResult)
+                    throw new Exception();
+                return newResult;
+
+            }
+
+            private bool NewOneRow()
+            {
+                return _mostBottomRow == 0 && RightmostAvailabeSquareAtRow[_mostBottomRow] > 0;
+            }
+
+            private bool OldOneRow()
+            {
+
                 for (int row = 1; row < _board._rows; row++)
                 {
                     for (int col = 0; col < _board._cols; col++)
@@ -364,6 +480,21 @@ namespace Game
             }
 
             internal bool OneCol()
+            {
+                bool goodResult = OldOneCol();
+                bool newResult = NewOneCol();
+                if (goodResult != newResult)
+                    throw new Exception();
+                return newResult;
+
+            }
+
+            private bool NewOneCol()
+            {
+                return RightmostAvailabeSquareAtRow[0] == 0 && _mostBottomRow > 0;
+            }
+
+            private bool OldOneCol()
             {
                 for (int row = 0; row < _board._rows; row++)
                 {
@@ -378,11 +509,27 @@ namespace Game
 
             internal bool SamzeSizeOneRowAndOneCol()
             {
-                int rowLength=0;
+                bool goodResult = OldSamzeSizeOneRowAndOneCol();
+                bool newResult = NewSamzeSizeOneRowAndOneCol();
+                if (goodResult != newResult)
+                    throw new Exception();
+                return newResult;
+
+            }
+
+            private bool NewSamzeSizeOneRowAndOneCol()
+            {
+                return RightmostAvailabeSquareAtRow[0] == _mostBottomRow && RightmostAvailabeSquareAtRow.ContainsKey(1) && RightmostAvailabeSquareAtRow[1] == 0;
+            }
+
+            private bool OldSamzeSizeOneRowAndOneCol()
+            {
+
+                int rowLength = 0;
                 for (; rowLength < _board._cols && _board._board[0, rowLength] == 'X'; rowLength++) ;
                 int colLength = 0;
                 for (; colLength < _board._rows && _board._board[colLength, 0] == 'X'; colLength++) ;
-                if (colLength != rowLength || rowLength==0 )
+                if (colLength != rowLength || rowLength == 0)
                     return false;
                 for (int row = 1; row < _board._rows; row++)
                 {
@@ -396,6 +543,23 @@ namespace Game
             }
 
             internal bool TwoCols()
+            {
+                bool goodResult = OldTwoCols();
+                bool newResult = NewTwoCols();
+                if (goodResult != newResult)
+                    throw new Exception();
+                return newResult;
+
+            }
+
+            private bool NewTwoCols()
+            {
+                if (RightmostAvailabeSquareAtRow[0] == 1 && _mostBottomRow > 0 && RightmostAvailabeSquareAtRow[_mostBottomRow - 1] == 1 && RightmostAvailabeSquareAtRow[_mostBottomRow] == 0)
+                    return true;
+                return false;
+            }
+
+            private bool OldTwoCols()
             {
                 int firstColLength = 0;
                 for (; firstColLength < _board._rows && _board._board[firstColLength, 0] == 'X'; firstColLength++) ;
@@ -411,11 +575,31 @@ namespace Game
                             return false;
                     }
                 }
-                return true; 
+                return true;
             }
 
             internal bool TwoRows()
             {
+                bool goodResult = OldTwoRows();
+                bool newResult = NewTwoRows();
+                if (goodResult != newResult)
+                    throw new Exception();
+                return newResult;
+
+
+            }
+
+            private bool NewTwoRows()
+            {
+                if (RightmostAvailabeSquareAtRow.ContainsKey(1) && RightmostAvailabeSquareAtRow[0] == RightmostAvailabeSquareAtRow[1] + 1 && _mostBottomRow == 1)
+                    return true;
+                else
+                    return false;
+            }
+
+            private bool OldTwoRows()
+            {
+
                 int firstRowLength = 0;
                 for (; firstRowLength < _board._cols && _board._board[0, firstRowLength] == 'X'; firstRowLength++) ;
                 int secondRowLenth = 0;
