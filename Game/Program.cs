@@ -12,9 +12,9 @@ namespace Game
 {
     class Program
     {
-        public const int m_numberOfGames = 100;
-        public const int m_boardRows = 12;
-        public const int m_boardCols = 10;
+        public const int m_numberOfGames = 1;
+        public const int m_boardRows =5;
+        public const int m_boardCols = 7;
         public const int m_gameLevel = 5;
         public const bool m_printAllResults   /*= false; */ = true;
         static Logger logger;
@@ -48,22 +48,29 @@ namespace Game
                 }
                 do
                 {
+                    Board prevBoard = new Board(board);
                     try
                     {
+                        
                         if (playerTurn == '1')
                         {
                             legalTurn = Turn(board, playerTurn, true);             //Your Turn             
                         }
                         else if (playerTurn == '2')
                         {
-                            legalTurn = Turn(board, playerTurn, true);
+                            legalTurn = Turn(board, playerTurn, false);
                         }
                     }
                     catch (Exception e)
                     {
                         legalTurn = false;
+                        if (playerTurn == '1')
+                        {
+                            legalTurn = Turn(prevBoard, playerTurn, true);             //Your Turn             
+                        }
                     }
-                    board.printTheBoard();
+
+                    //Console.ReadLine();
                     switchTurns(ref playerTurn);
                     if (board.isTheGameEnded() || !legalTurn)
                     {
@@ -83,7 +90,7 @@ namespace Game
 
                     logger.WriteToFile(@"log\AIGameLog" + game + ".txt");
                 }
-                Console.WriteLine("Press enter to continue");
+                //Console.WriteLine("Winner is "+ winner);
                 //Console.ReadLine();
 
             }
@@ -131,23 +138,28 @@ namespace Game
             System.GC.Collect();
             Stopwatch timer = Stopwatch.StartNew();
             Tuple<int, int> move = new Tuple<int, int>(-1, -1);
+            Board prevBoard = new Board(board);
             if (player == '1')
             {
-                move = (new Player1()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds));
+                move = (new PlayerFromScratch()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds));
                 Console.WriteLine("Lior`s Move: ({0},{1})", move.Item1, move.Item2);
                 logger.Add(String.Format("Lior`s Move: ({0},{1})", move.Item1, move.Item2));
+
+
+                // move = (new Player1()).playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds));
+
 
             }
             else if (player == '2')
             {
 
-                move = (new LeraPlayer3().playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds)));
+                move = (new LeraPlayer3 ().playYourTurn(new Board(board), new TimeSpan(0, 0, 0, 0, stopMilliseconds)));
                 Console.WriteLine("Lera`s Move: ({0},{1})", move.Item1, move.Item2);
                 logger.Add(String.Format("Lera`s Move: ({0},{1})", move.Item1, move.Item2));
 
             }
             timer.Stop();
-            TimeSpan timespan = timer.Elapsed;
+             TimeSpan timespan = timer.Elapsed;
             if (timespan.TotalMilliseconds > stopMilliseconds ||
                 !board.isLegalMove(move.Item1, move.Item2))
             {
@@ -157,6 +169,10 @@ namespace Game
             else
             {
                 board.fillPlayerMove(move.Item1, move.Item2);
+                board.printTheBoard();
+                //string s = Console.ReadLine();
+                //if (!String.IsNullOrEmpty(s))
+                //    new PlayerFromScratch().playYourTurn(new Board(prevBoard), new TimeSpan(0, 0, 0, 0, stopMilliseconds));
                 return true;
             }
 
@@ -173,7 +189,7 @@ namespace Game
             else if (m_gameLevel == 4)
                 return 80;
             else
-                return 50;// 000000;
+                return 500;
         }
         public class Logger
         {

@@ -47,7 +47,10 @@
     <Compile Include="Board.cs" />
     <Compile Include="LeraPlayer3.cs" />
     <Compile Include="LiorPlayer.cs" />
+    <Compile Include="OldVersionPlayer.cs" />
+    <Compile Include="Player1 - Copy.cs" />
     <Compile Include="Player1.cs" />
+    <Compile Include="PlayerFromScratch.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

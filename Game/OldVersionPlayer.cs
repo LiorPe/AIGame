@@ -5,16 +5,13 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ClassLibrary1;
 
 namespace Game
 {
-    internal class Player1
+    public class OldVersionPlayer
     {
         Stopwatch stopWatch = new Stopwatch();
         TimeSpan _timesup;
-        Dictionary<Tuple<string,Tuple<int,int>>,BoardOutlines > memory;
-        List<string> log = new List<string>();
         public void getPlayers(ref string player1_1, ref string player1_2)  //fill players ids
         {
             player1_1 = "203722814";  //id1
@@ -28,42 +25,37 @@ namespace Game
         )
         {
             StartStopWatch();
-            memory = new Dictionary<Tuple<string, Tuple<int, int>>, BoardOutlines>();
             _timesup = timesup;
             BoardOutlines borderOutline = new BoardOutlines(board);
             Tuple<int, int> toReturn = null;
-            toReturn = FindBestMove(borderOutline);
-            memory = new Dictionary<Tuple<string, Tuple<int, int>>, BoardOutlines>();
+            Stack<Tuple<int, int>> allPossibleMoves = borderOutline.GetAllPossibleMoves();
+            toReturn = FindBestMove(borderOutline, allPossibleMoves);
             if (toReturn == null)
-                toReturn = borderOutline.GetMoveForLosingState();
+                toReturn = borderOutline.GetNextMove();
             Console.WriteLine("{0} ms left", (_timesup - stopWatch.Elapsed).TotalMilliseconds);
-
             return toReturn;
         }
 
-        private Tuple<int, int> FindBestMove(BoardOutlines borderOutline)
+        private Tuple<int, int> FindBestMove(BoardOutlines borderOutline, Stack<Tuple<int, int>> movesToCheck)
         {
-            Stack<Tuple<int, int>> movesToCheck  = borderOutline.GetAllPossibleMoves();
             Tuple<int, int> currentMove;
             BoardOutlines BoardOutlinesAterMyMove;
             Dictionary<Tuple<int, int>, BoardOutlines> boardOutlinesAfterMyTurn = new Dictionary<Tuple<int, int>, BoardOutlines>();
             while (!TimeIsAboutToEnd() && movesToCheck.Count > 0)
             {
                 currentMove = movesToCheck.Pop();
-                BoardOutlinesAterMyMove = GetBoardOutline(currentMove, borderOutline);
-                
-                if (LoosingSituation(BoardOutlinesAterMyMove))
+                BoardOutlinesAterMyMove = new BoardOutlines(borderOutline, currentMove);
+                if (PreviousMoveLedToWinningSituation(BoardOutlinesAterMyMove))
                 {
-                    Console.WriteLine("Gain calculated: 1");
+                    //Console.WriteLine("Gain: 1");
                     return currentMove;
                 }
                 boardOutlinesAfterMyTurn[currentMove] = BoardOutlinesAterMyMove;
             }
-
             int maxGain = Int32.MinValue;
             int currentGain;
             Tuple<int, int> chosenMove = null;
-            int depthLevel = 5;
+            int depthLevel = 2;
             int previousDepthLvl = depthLevel;
             Tuple<int, int> move;
             for (int i = 0; i < boardOutlinesAfterMyTurn.Keys.Count; i++)
@@ -75,16 +67,23 @@ namespace Game
                 }
                 BoardOutlinesAterMyMove = boardOutlinesAfterMyTurn[move];
 
+                double thisBranchTimeOut;
                 if (stopWatch.Elapsed.TotalMilliseconds / _timesup.TotalMilliseconds < 0.3)
                 {
-                    //depthLevel = UpdateDepthLevel(depthLevel, ref previousDepthLvl, boardOutlinesAfterMyTurn.Keys.Count - i, boardOutlinesAfterMyTurn.Keys.Count, false,10);
+                    thisBranchTimeOut = Double.MaxValue;
+                    depthLevel = UpdateDepthLevel(depthLevel, ref previousDepthLvl, boardOutlinesAfterMyTurn.Keys.Count - (i + 1), boardOutlinesAfterMyTurn.Keys.Count, false);
 
                 }
                 else
                 {
-                    //depthLevel = UpdateDepthLevel(depthLevel, ref previousDepthLvl, boardOutlinesAfterMyTurn.Keys.Count - i, boardOutlinesAfterMyTurn.Keys.Count, true,10);
+                    depthLevel = UpdateDepthLevel(depthLevel, ref previousDepthLvl, boardOutlinesAfterMyTurn.Keys.Count - (i + 1), boardOutlinesAfterMyTurn.Keys.Count, true);
+                    thisBranchTimeOut = stopWatch.Elapsed.TotalMilliseconds + (_timesup - stopWatch.Elapsed).TotalMilliseconds / (boardOutlinesAfterMyTurn.Keys.Count - i);
                 }
-                currentGain = CheckMoveValue(BoardOutlinesAterMyMove, Turn.MinPlayer_Opponent, depthLevel, int.MinValue, int.MaxValue);
+
+                if (!PreviousMoveLeadToLoosingSituation(BoardOutlinesAterMyMove))
+                    currentGain = CheckMoveValue(BoardOutlinesAterMyMove, Turn.MaxPlayer_ME, depthLevel, int.MinValue, int.MaxValue, 0);
+                else
+                    currentGain = -1;
                 if (currentGain > maxGain)
                 {
                     maxGain = currentGain;
@@ -97,37 +96,27 @@ namespace Game
                     }
 
                 }
+                if (maxGain == -1)
+                {
+                    move = borderOutline.GetNextMove();
+                    //Console.WriteLine("all moves lead to loose!");
+                }
+                if (maxGain == 1)
+                {
+                    move = borderOutline.GetNextMove();
+                }
 
             }
-            Console.WriteLine("Gain calculated: " + maxGain);
-            if (maxGain == 0)
-            {
-                return borderOutline.GetMoveForLosingState();
-            }
+            //Console.WriteLine("Gain: {0}", maxGain);
+            //Console.WriteLine(maxGain);
             return chosenMove;
-
         }
-
-        private BoardOutlines GetBoardOutline(Tuple<int, int> currentMove, BoardOutlines borderOutline)
-        {
-            BoardOutlines boardOutline;
-            Tuple<string, Tuple<int, int>> boardAfterMove = new Tuple<string, Tuple<int, int>>(borderOutline.ToString(), currentMove);
-            if (memory.ContainsKey(boardAfterMove))
-                boardOutline = memory[boardAfterMove];
-            else
-            {
-                boardOutline = new BoardOutlines(borderOutline, currentMove);
-                memory[boardAfterMove] = boardOutline;
-            }
-            return boardOutline;
-        }
-
-        private int UpdateDepthLevel(int depthLevel, ref int previousDepthLvl, int movesLeftToEvaluate, int totalMovesToEvaluate, bool allowDecrease, int maxDepthLevel)
+        private int UpdateDepthLevel(int depthLevel, ref int previousDepthLvl, int movesLeftToEvaluate, int totalMovesToEvaluate, bool allowDecrease)
         {
             double timeLeft = (_timesup - stopWatch.Elapsed).TotalMilliseconds;
             double portionOfTimeLeft = timeLeft / _timesup.TotalMilliseconds;
             double portionOfMovesLeft = (double)movesLeftToEvaluate / (double)totalMovesToEvaluate;
-            double previousPortionOfMovesLeft = (double)(movesLeftToEvaluate - 1) / (double)totalMovesToEvaluate;
+            double previousPortionOfMovesLeft = (double)movesLeftToEvaluate / (double)totalMovesToEvaluate;
 
             if (portionOfMovesLeft > portionOfTimeLeft && allowDecrease)
             {
@@ -135,7 +124,7 @@ namespace Game
                 {
                     int newDepthLevel = 0;
                     previousDepthLvl = depthLevel;
-                    //Console.WriteLine("Decreased depth level to :{0} , moves left: ({1} from {2}), time left: ({3} from {4})", newDepthLevel, movesLeftToEvaluate, totalMovesToEvaluate, _timesup.TotalMilliseconds - stopWatch.Elapsed.TotalMilliseconds, _timesup.TotalMilliseconds);
+                    Console.WriteLine("Decreased depth level to :{0} , moves left: ({1} from {2}), time left: ({3} from {4})", newDepthLevel, movesLeftToEvaluate, totalMovesToEvaluate, _timesup.TotalMilliseconds - stopWatch.Elapsed.TotalMilliseconds, _timesup.TotalMilliseconds);
                     return newDepthLevel;
                 }
                 else
@@ -149,7 +138,7 @@ namespace Game
             }
             if (previousPortionOfMovesLeft < portionOfTimeLeft)
             {
-                int newDepthLevel = Math.Min(depthLevel + 1, maxDepthLevel);//+ 1;
+                int newDepthLevel = depthLevel + 1;//+ 1;
                 previousDepthLvl = depthLevel;
                 Console.WriteLine("Increaded depth level to :{0}  , moves left: ({1} from {2}), time left: ({3} from {4})", newDepthLevel, movesLeftToEvaluate, totalMovesToEvaluate, _timesup.TotalMilliseconds - stopWatch.Elapsed.TotalMilliseconds, _timesup.TotalMilliseconds);
                 return newDepthLevel;
@@ -159,39 +148,48 @@ namespace Game
             return depthLevel;
         }
 
-        private bool LoosingSituation(BoardOutlines currentBorderOutlines)
+        private bool PreviousMoveLedToWinningSituation(BoardOutlines currentBorderOutlines)
         {
-            bool result = currentBorderOutlines.OnlyPoisonedSquareLeft() || currentBorderOutlines.TwoSameLengthStripes() || currentBorderOutlines.TwoSameLengthRows() || currentBorderOutlines.TwoSameLengthCols();
-            return result;
+            return currentBorderOutlines.TwoSameLengthStripes() || currentBorderOutlines.TwoSameLengthRows() || currentBorderOutlines.TwoSameLengthCols();
         }
-        private bool WinningSituation(BoardOutlines currentBorderOutlines)
+        private bool PreviousMoveLeadToLoosingSituation(BoardOutlines currentBorderOutlines)
         {
-
+            bool OnlyPoisonedSquareLeft = currentBorderOutlines.OnlyPoisonedSquareLeft();
             bool OneCol = currentBorderOutlines.OneCol();
+            bool BoardIs2XN = currentBorderOutlines.BoardIs2XN();
+            bool BoardIsNX2 = currentBorderOutlines.BoardIsNX2();
             bool OneRow = currentBorderOutlines.OneRow();
-            bool square = currentBorderOutlines.Square();
-            if (square || OneCol || OneRow)
+            bool NextMoveLeadsToTwoSameLengthStripes = currentBorderOutlines.NextMoveLeadsToTwoSameLengthStripes();
+            bool nextMoveLeadToTwoSameLengthRow = currentBorderOutlines.nextMoveLeadToTwoSameLengthRow();
+            bool nextMoveLeadToTwoSameLengthCol = currentBorderOutlines.nextMoveLeadToTwoSameLengthCol();
+            if (OnlyPoisonedSquareLeft || OneCol || BoardIs2XN || BoardIsNX2 || OneRow || NextMoveLeadsToTwoSameLengthStripes || nextMoveLeadToTwoSameLengthRow || nextMoveLeadToTwoSameLengthCol)
             {
+                //Console.WriteLine("Loosing situation: {0}", currentBorderOutlines);
                 return true;
             }
             return false;
+
+
+
         }
 
-        private int CheckMoveValue(BoardOutlines boardOutline, Turn currentTurnPlayer, int depthLevel, int alpha, int beta)
+        private int CheckMoveValue(BoardOutlines boardOutline, Turn playedPreviousTurn, int depthLevel, int alpha, int beta, double branchTimeOut)
         {
-            if (LoosingSituation(boardOutline))
+
+
+            if (PreviousMoveLedToWinningSituation(boardOutline))
             {
-                if (currentTurnPlayer == Turn.MaxPlayer_ME)
-                    return -1;
-                else
+                if (playedPreviousTurn == Turn.MaxPlayer_ME)
                     return 1;
+                else
+                    return -1;
             }
-            if (WinningSituation(boardOutline))
+            if (PreviousMoveLeadToLoosingSituation(boardOutline))
             {
-                if (currentTurnPlayer == Turn.MaxPlayer_ME)
-                    return 1;
-                else
+                if (playedPreviousTurn == Turn.MaxPlayer_ME)
                     return -1;
+                else
+                    return 1;
             }
             if (depthLevel == 0)
             {
@@ -200,27 +198,30 @@ namespace Game
 
             int bestValue;
             int currentMoveValue;
-            Turn nextPlayerTurn;
-            if (currentTurnPlayer == Turn.MaxPlayer_ME)
+            Turn thisTurn;
+            if (playedPreviousTurn == Turn.MaxPlayer_ME)
             {
-                nextPlayerTurn = Turn.MinPlayer_Opponent;
-                bestValue = int.MinValue;
+                thisTurn = Turn.MinPlayer_Opponent;
+                bestValue = int.MaxValue;
             }
             else
             {
-                bestValue = int.MaxValue;
-                nextPlayerTurn = Turn.MaxPlayer_ME;
+                bestValue = int.MinValue;
+                thisTurn = Turn.MaxPlayer_ME;
             }
             Tuple<int, int> currentMove;
             BoardOutlines boardOutlineAfterMove;
+            Dictionary<Tuple<int, int>, BoardOutlines> boardsOutlinesAfterThisMove = new Dictionary<Tuple<int, int>, BoardOutlines>();
             Stack<Tuple<int, int>> allPossibleMoves = boardOutline.GetAllPossibleMoves();
             while (!TimeIsAboutToEnd() && allPossibleMoves.Count > 0)
             {
                 currentMove = allPossibleMoves.Pop();
-                boardOutlineAfterMove = GetBoardOutline(currentMove, boardOutline);
-                currentMoveValue = CheckMoveValue(boardOutlineAfterMove, nextPlayerTurn, depthLevel - 1, alpha, beta);
-                //PrintGain(boardOutlineAfterMove, currentTurnPlayer, depthLevel, currentMoveValue, currentMove);
-                if (currentTurnPlayer == Turn.MaxPlayer_ME)
+                boardOutlineAfterMove = new BoardOutlines(boardOutline, currentMove);
+
+                boardsOutlinesAfterThisMove[currentMove] = boardOutlineAfterMove;
+
+                currentMoveValue = CheckMoveValue(boardOutlineAfterMove, thisTurn, depthLevel - 1, alpha, beta, branchTimeOut);
+                if (thisTurn == Turn.MaxPlayer_ME)
                 {
                     bestValue = Math.Max(bestValue, currentMoveValue);
                     alpha = Math.Max(alpha, currentMoveValue);
@@ -245,23 +246,22 @@ namespace Game
             return bestValue;
 
 
-        }
 
-        private void PrintGain(BoardOutlines boardOutlineAfterMove, Turn nextPlayerTurn, int depthLevel, int gain, Tuple<int,int> move)
-        {
-            string status = String.Empty;
-            for (int i = 0; i < depthLevel; i++)
-                status += "   ";
-            status += String.Format("Turn: {0}, Move:{3}, Board outlines after move: {1}, Gain: {2}", nextPlayerTurn, boardOutlineAfterMove, gain,move);
-            Console.WriteLine(status);
+            foreach (Tuple<int, int> move in boardsOutlinesAfterThisMove.Keys)
+            {
+                if (TimeIsAboutToEnd())
+                {
+                    break;
+                }
+
+                boardOutlineAfterMove = boardsOutlinesAfterThisMove[move];
+            }
+
         }
 
         private bool TimeIsAboutToEnd()
         {
-            if ((_timesup - stopWatch.Elapsed).TotalMilliseconds < 10)
-                return true;
-            else
-                return false;
+            return (_timesup - stopWatch.Elapsed).TotalMilliseconds < 10;
         }
 
         private void StartStopWatch()
@@ -285,26 +285,20 @@ namespace Game
             public int _rows;
             public int _cols;
             public int _mostBottomRow = 0;
-            public Dictionary<int, int> RightmostAvailabeSquareAtRow;
-            public string key;
+            public Dictionary<int, int?> RightmostAvailabeSquareAtRow;
+            private Tuple<int, int> currentMove = null;
 
             public BoardOutlines(Board board)
             {
                 _rows = board._rows;
                 _cols = board._cols;
-                int? rightMostSquareInCurrentRow;
-                RightmostAvailabeSquareAtRow = new Dictionary<int, int>();
-                int row = 0;
-                for (; row < board._rows; row++)
+                RightmostAvailabeSquareAtRow = new Dictionary<int, int?>();
+                for (int row = 0; row < board._rows; row++)
                 {
-                    rightMostSquareInCurrentRow = FindMostRightSquare(board._board, row, _cols);
-                    if (rightMostSquareInCurrentRow != null)
-                        RightmostAvailabeSquareAtRow[row] = (int)rightMostSquareInCurrentRow;
-                    else
-                        break;
+                    RightmostAvailabeSquareAtRow[row] = FindMostRightSquare(board._board, row, _cols);
+                    if (RightmostAvailabeSquareAtRow[row] != null)
+                        _mostBottomRow = row;
                 }
-                _mostBottomRow = Math.Max(0, row - 1);
-                key = ToString();
 
             }
 
@@ -332,47 +326,46 @@ namespace Game
                 return FindMostRightSquare(_board, row, rowLength);
             }
 
-
             public BoardOutlines(BoardOutlines boardOutlines, Tuple<int, int> move)
             {
                 _rows = boardOutlines._rows;
                 _cols = boardOutlines._cols;
-                RightmostAvailabeSquareAtRow = new Dictionary<int, int>();
-                int row = 0;
-                for (; row < _rows && row < move.Item1; row++)
-                    RightmostAvailabeSquareAtRow[row] = boardOutlines.RightmostAvailabeSquareAtRow[row];
-                for (; row < _rows; row++)
+                RightmostAvailabeSquareAtRow = new Dictionary<int, int?>();
+
+                foreach (int row in boardOutlines.RightmostAvailabeSquareAtRow.Keys)
                 {
-                    if (move.Item2 == 0 || !boardOutlines.RightmostAvailabeSquareAtRow.ContainsKey(row))
+                    int? rightMostAvailabeSquareAtRow = boardOutlines.RightmostAvailabeSquareAtRow[row];
+                    if (row >= move.Item1 && rightMostAvailabeSquareAtRow != null && rightMostAvailabeSquareAtRow >= move.Item2)
                     {
-                        break;
+                        if (move.Item2 == 0)
+                        {
+                            RightmostAvailabeSquareAtRow[row] = null;
+                        }
+                        else
+                            RightmostAvailabeSquareAtRow[row] = move.Item2 - 1;
+
                     }
                     else
-                        RightmostAvailabeSquareAtRow[row] = Math.Min(move.Item2 - 1, boardOutlines.RightmostAvailabeSquareAtRow[row]);
+                        RightmostAvailabeSquareAtRow[row] = rightMostAvailabeSquareAtRow;
+                    if (RightmostAvailabeSquareAtRow[row] != null)
+                        _mostBottomRow = row;
                 }
-                _mostBottomRow = Math.Max(0, row - 1);
-                key = ToString();
-
             }
 
 
 
-
-            public Tuple<int, int> GetMoveForLosingState()
+            public Tuple<int, int> GetNextMove()
             {
-                int lastRow = _mostBottomRow;
-                int lastCol = RightmostAvailabeSquareAtRow[0];
-                if (_mostBottomRow > RightmostAvailabeSquareAtRow[0])
-                    if (_mostBottomRow - 1 > RightmostAvailabeSquareAtRow[0])
-                        return new Tuple<int, int>(_mostBottomRow, RightmostAvailabeSquareAtRow[_mostBottomRow]);
-                    else if (_mostBottomRow - 1> 0)
-                        return new Tuple<int, int>(_mostBottomRow-1, RightmostAvailabeSquareAtRow[_mostBottomRow-1]);
-                if (RightmostAvailabeSquareAtRow[0]-1>_mostBottomRow)
-                    return new Tuple<int, int>(0, RightmostAvailabeSquareAtRow[0]);
-                else if (_mostBottomRow>1)
-                    return new Tuple<int, int>(1, RightmostAvailabeSquareAtRow[1]);
-                return new Tuple<int, int>(_mostBottomRow, RightmostAvailabeSquareAtRow[_mostBottomRow]);
-
+                if (currentMove == null)
+                    currentMove = new Tuple<int, int>(_mostBottomRow, (int)RightmostAvailabeSquareAtRow[_mostBottomRow]);
+                else
+                {
+                    if (currentMove.Item2 > 0)
+                        currentMove = new Tuple<int, int>(currentMove.Item1, currentMove.Item2 - 1);
+                    else
+                        currentMove = new Tuple<int, int>(currentMove.Item1 - 1, (int)RightmostAvailabeSquareAtRow[currentMove.Item1 - 1]);
+                }
+                return currentMove;
             }
 
             internal bool OnlyPoisonedSquareLeft()
@@ -382,13 +375,13 @@ namespace Game
 
             internal bool TwoSameLengthStripes()
             {
-                return RightmostAvailabeSquareAtRow[0] == _mostBottomRow && RightmostAvailabeSquareAtRow.ContainsKey(1) && RightmostAvailabeSquareAtRow[1] == 0;
+                return RightmostAvailabeSquareAtRow[0] == _mostBottomRow && RightmostAvailabeSquareAtRow[1] == 0;
             }
 
             internal bool TwoSameLengthRows()
             {
 
-                if (RightmostAvailabeSquareAtRow.ContainsKey(1) && RightmostAvailabeSquareAtRow[0] == RightmostAvailabeSquareAtRow[1] + 1 && _mostBottomRow == 1)
+                if (RightmostAvailabeSquareAtRow[1] != null && RightmostAvailabeSquareAtRow[0] == RightmostAvailabeSquareAtRow[1] + 1 && _mostBottomRow == 1)
                     return true;
                 else
                     return false;
@@ -402,6 +395,7 @@ namespace Game
             }
 
 
+
             internal bool OneRow()
             {
                 return _mostBottomRow == 0 && RightmostAvailabeSquareAtRow[_mostBottomRow] > 0;
@@ -412,16 +406,42 @@ namespace Game
                 return RightmostAvailabeSquareAtRow[0] == 0 && _mostBottomRow > 0;
             }
 
-            internal bool Square()
+            internal bool BoardIsNX2()
             {
-                if (_mostBottomRow == RightmostAvailabeSquareAtRow[0] && RightmostAvailabeSquareAtRow[_mostBottomRow] == RightmostAvailabeSquareAtRow[0])
+                return RightmostAvailabeSquareAtRow[_mostBottomRow] == 1 && RightmostAvailabeSquareAtRow[0] == 1 && _mostBottomRow > 0;
+            }
+
+            internal bool BoardIs2XN()
+            {
+                return _mostBottomRow == 1 && RightmostAvailabeSquareAtRow[1] == RightmostAvailabeSquareAtRow[0];
+            }
+            internal bool NextMoveLeadsToTwoSameLengthStripes()
+            {
+                if (_mostBottomRow == RightmostAvailabeSquareAtRow[0] && RightmostAvailabeSquareAtRow[1] != null && RightmostAvailabeSquareAtRow[1] > 0)
+                    return true;
+                return false;
+
+            }
+            internal bool nextMoveLeadToTwoSameLengthRow()
+            {
+                if (RightmostAvailabeSquareAtRow[1] != null && RightmostAvailabeSquareAtRow[0] == RightmostAvailabeSquareAtRow[1] + 1
+                    && _mostBottomRow == 2)
+                    return true;
+                else
+                    return false;
+            }
+
+            internal bool nextMoveLeadToTwoSameLengthCol()
+            {
+                if (RightmostAvailabeSquareAtRow[0] == 2 && _mostBottomRow > 0 && RightmostAvailabeSquareAtRow[_mostBottomRow - 1] == 1 && RightmostAvailabeSquareAtRow[_mostBottomRow] == 0)
                     return true;
                 return false;
             }
+
             internal Stack<Tuple<int, int>> GetAllPossibleMoves()
             {
                 Stack<Tuple<int, int>> allPossibleMoves = new Stack<Tuple<int, int>>();
-                if (RightmostAvailabeSquareAtRow[0] == 0 && _mostBottomRow == 0)
+                if (RightmostAvailabeSquareAtRow[0] == 0 && RightmostAvailabeSquareAtRow[1] == null)
                     return allPossibleMoves;
                 Tuple<int, int> possibleMove = new Tuple<int, int>(_mostBottomRow, (int)RightmostAvailabeSquareAtRow[_mostBottomRow]);
                 allPossibleMoves.Push(possibleMove);
@@ -442,13 +462,15 @@ namespace Game
             public override string ToString()
             {
                 string result = "|";
-                for (int row = 0; row <= _mostBottomRow; row++)
+                for (int row = 0; row < _rows && RightmostAvailabeSquareAtRow[row] != null; row++)
                 {
                     result += RightmostAvailabeSquareAtRow[row] + "|";
                 }
+                result += "|";
                 return result;
 
             }
+
 
         }
     }
