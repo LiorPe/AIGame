@@ -63,7 +63,7 @@ namespace Game
             int maxGain = Int32.MinValue;
             int currentGain;
             Tuple<int, int> chosenMove = null;
-            int depthLevel = 5;
+            int depthLevel = 20;
             int previousDepthLvl = depthLevel;
             Tuple<int, int> move;
             for (int i = 0; i < boardOutlinesAfterMyTurn.Keys.Count; i++)

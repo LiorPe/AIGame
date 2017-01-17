@@ -12,7 +12,7 @@ namespace Game
 {
     class Program
     {
-        public const int m_numberOfGames =50;
+        public const int m_numberOfGames =1;
         public const int m_boardRows =7;
         public const int m_boardCols = 5;
         public const int m_gameLevel = 5;
@@ -189,7 +189,7 @@ namespace Game
             else if (m_gameLevel == 4)
                 return 80;
             else
-                return 5000;
+                return 1000;
         }
         public class Logger
         {
